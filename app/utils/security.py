@@ -4,12 +4,16 @@ from jose import jwt, JWTError
 from datetime import datetime, timedelta
 
 from app.database.mongo import user_collection
+import os
+from dotenv import load_dotenv
 
 
 # Şifre hashleme için passlib
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "replace-with-a-random-secret"  # production'da .env'e koyulmalı
-ALGORITHM = "HS256"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 
 
 # Şifreyi hash'leme
@@ -44,7 +48,7 @@ async def get_current_user(request: Request):
     user = request.state.user  # Middleware'de ayarladığımız kullanıcıyı alıyoruz
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
-    return {"email": user["email"]}
+    return {"email": user["email"], "id": str(user["_id"])}
 
 
 # Token'ı çözme işlemi, genellikle middleware'de yapılır, ancak burada da kullanılabilir

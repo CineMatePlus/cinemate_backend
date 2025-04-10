@@ -1,11 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from app.models.user_model import UserIn, UserInDB, UserOut
 from app.database.mongo import user_collection
-from jose import jwt, JWTError
-from fastapi.security import OAuth2PasswordRequestForm
 from app.utils.security import (
-    ALGORITHM,
-    SECRET_KEY,
+    decode_access_token,
     hash_password,
     verify_password,
     create_access_token,
@@ -59,13 +56,9 @@ async def login(user: UserIn):
 
 
 @auth_router.get("/me")
-async def read_current_user(request: Request):
-    # Kullanıcıyı middleware'den alıyoruz
-    if hasattr(request.state, "user"):
-        user = request.state.user
-        return {"email": user["email"], "id": str(user["_id"])}
-    else:
-        raise HTTPException(status_code=401, detail="User not authenticated")
+async def read_current_user(current_user: dict = Depends(get_current_user)):
+    # current_user, get_current_user'dan dönen kullanıcı bilgilerini içerir
+    return current_user
 
 
 @auth_router.post("/refresh")
@@ -76,13 +69,12 @@ async def refresh_token(request: Request):
     if not token:
         raise HTTPException(status_code=400, detail="Refresh token missing")
 
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-        if not email:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    # Token'ı çöz ve email'i al
+    payload = decode_access_token(token)
+    email = payload.get("sub")
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
+    # Yeni access token oluştur
     new_access_token = create_access_token({"sub": email})
     return {"token": new_access_token}

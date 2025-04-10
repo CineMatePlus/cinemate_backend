@@ -1,8 +1,9 @@
 from pydantic import BaseModel, Field
+from enum import Enum
 from typing import Literal
 
 
-class CollectionType(str):
+class CollectionType(str, Enum):  # Enum kullanımı
     WATCHED = "watched"
     TO_WATCH = "to_watch"
     CUSTOM = "custom"
@@ -10,7 +11,7 @@ class CollectionType(str):
 
 class CollectionBase(BaseModel):
     name: str
-    type: Literal["watched", "to_watch", "custom"] = "custom"
+    type: CollectionType = CollectionType.CUSTOM  # Default "custom" tipi
     immutable: bool = False
 
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
 from typing import List
 from app.models.collection_model import CollectionInDB, CollectionType
 
