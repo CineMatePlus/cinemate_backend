@@ -1,71 +1,55 @@
-from fastapi import Depends, Form, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-
+from fastapi import Depends, HTTPException, Request
 from passlib.context import CryptContext
 from jose import jwt, JWTError
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
-from app.database.mongo import (
-    user_collection,
-)  # Asenkron bir MongoDB istemcisi kullanmalısınız (ör. motor)
+from app.database.mongo import user_collection
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")  # Token'ı buradan alırız
 
+# Şifre hashleme için passlib
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "replace-with-a-random-secret"  # production'da .env'e koy
+SECRET_KEY = "replace-with-a-random-secret"  # production'da .env'e koyulmalı
 ALGORITHM = "HS256"
 
 
-def hash_password(password: str):
+# Şifreyi hash'leme
+def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def verify_password(plain_password: str, hashed_password: str):
+# Şifreyi doğrulama
+def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=30)):
+# Access token oluşturma
+def create_access_token(
+    data: dict, expires_delta: timedelta = timedelta(minutes=30)
+) -> str:
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + expires_delta
+    expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_refresh_token(data: dict, expires_delta: timedelta = timedelta(days=7)):
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + expires_delta
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+# Refresh token oluşturma (aynı işlemi yapıyor, sadece süre farklı)
+def create_refresh_token(
+    data: dict, expires_delta: timedelta = timedelta(days=7)
+) -> str:
+    return create_access_token(data, expires_delta)
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=401,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-
-    user = await user_collection.find_one({"email": email})  # Asenkron sorgu
-    if user is None:
-        raise credentials_exception
-
+# Middleware tarafından ayarlanan kullanıcıyı almak
+async def get_current_user(request: Request):
+    user = request.state.user  # Middleware'de ayarladığımız kullanıcıyı alıyoruz
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
     return {"email": user["email"]}
 
 
-def decode_access_token(token: str):
+# Token'ı çözme işlemi, genellikle middleware'de yapılır, ancak burada da kullanılabilir
+def decode_access_token(token: str) -> dict:
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise HTTPException(status_code=401, detail="Invalid token")
