@@ -14,13 +14,10 @@ class UserOut(BaseModel):
     collections: List[CollectionInDB] = []  # Kullanıcının koleksiyonları
 
 
-
-
 class UserInDB(BaseModel):
     email: EmailStr
     hashed_password: str
     collections: List[CollectionInDB] = []  # Kullanıcının koleksiyonları
-
 
     def add_default_collections(self):
         default_collections = [

@@ -46,9 +46,9 @@ async def register(user: UserIn):
 
 
 @auth_router.post("/login", response_model=UserOut)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    email = form_data.username # form_data.username yerine form_data.email kullanılmalı
-    password = form_data.password
+async def login(user: UserIn):
+    email = user.email
+    password = user.password
     db_user = await user_collection.find_one({"email": email})
     if not db_user or not verify_password(password, db_user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -59,8 +59,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @auth_router.get("/me")
-async def read_current_user(current_user: dict = Depends(get_current_user)):
-    return {"user": current_user}
+async def read_current_user(request: Request):
+    # Kullanıcıyı middleware'den alıyoruz
+    if hasattr(request.state, "user"):
+        user = request.state.user
+        return {"email": user["email"], "id": str(user["_id"])}
+    else:
+        raise HTTPException(status_code=401, detail="User not authenticated")
 
 
 @auth_router.post("/refresh")

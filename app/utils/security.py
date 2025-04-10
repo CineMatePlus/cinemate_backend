@@ -5,9 +5,11 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
 
-from app.database.mongo import user_collection  # Asenkron bir MongoDB istemcisi kullanmalısınız (ör. motor)
+from app.database.mongo import (
+    user_collection,
+)  # Asenkron bir MongoDB istemcisi kullanmalısınız (ör. motor)
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")  # Token'ı buradan alırız
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")  # Token'ı buradan alırız
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "replace-with-a-random-secret"  # production'da .env'e koy
@@ -55,3 +57,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
 
     return {"email": user["email"]}
+
+
+def decode_access_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
