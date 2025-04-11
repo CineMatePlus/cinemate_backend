@@ -12,6 +12,30 @@ class CollectionService:
     def __init__(self):
         self.db = get_database()
 
+    def _convert_to_object_id(self, id_str: str) -> ObjectId:
+        """String ID'yi ObjectId'ye dönüştürür"""
+        try:
+            return ObjectId(id_str)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Geçersiz ID formatı: {id_str}",
+            )
+
+    def _handle_exception(self, e: Exception) -> None:
+        """Hata yakalama ve HTTPException fırlatma"""
+        if isinstance(e, HTTPException):
+            raise e
+        if isinstance(e, ValueError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Geçersiz veri: {str(e)}",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Bir hata oluştu: {str(e)}",
+        )
+
     async def create_collection(
         self, collection: CollectionCreate, user_id: str
     ) -> CollectionInDB:
@@ -45,11 +69,8 @@ class CollectionService:
             return CollectionInDB(
                 **{**created_collection, "_id": str(created_collection["_id"])}
             )
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Geçersiz veri: {str(e)}",
-            )
+        except Exception as e:
+            self._handle_exception(e)
 
     async def get_collections(
         self, user_id: str, skip: int = 0, limit: int = 10
@@ -68,35 +89,29 @@ class CollectionService:
                 CollectionInDB(**{**collection, "_id": str(collection["_id"])})
                 for collection in collections
             ]
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Geçersiz kullanıcı ID formatı: {str(e)}",
-            )
+        except Exception as e:
+            self._handle_exception(e)
 
     async def get_collection(self, collection_id: str) -> Optional[CollectionInDB]:
         """Belirli bir koleksiyonu getirir"""
         try:
-            collection_object_id = ObjectId(collection_id)
+            collection_object_id = self._convert_to_object_id(collection_id)
             collection = await self.db.collections.find_one(
                 {"_id": collection_object_id}
             )
             if collection:
                 return CollectionInDB(**{**collection, "_id": str(collection["_id"])})
             return None
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Geçersiz koleksiyon ID formatı: {str(e)}",
-            )
+        except Exception as e:
+            self._handle_exception(e)
 
     async def update_collection(
         self, collection_id: str, collection: CollectionUpdate, user_id: str
     ) -> Optional[CollectionInDB]:
         """Koleksiyonu günceller"""
         try:
-            collection_object_id = ObjectId(collection_id)
-            user_object_id = ObjectId(user_id)
+            collection_object_id = self._convert_to_object_id(collection_id)
+            user_object_id = self._convert_to_object_id(user_id)
 
             # Koleksiyonun var olduğunu ve kullanıcıya ait olduğunu kontrol et
             existing_collection = await self.get_collection(str(collection_object_id))
@@ -139,17 +154,14 @@ class CollectionService:
             return CollectionInDB(
                 **{**updated_collection, "_id": str(updated_collection["_id"])}
             )
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Geçersiz ID formatı: {str(e)}",
-            )
+        except Exception as e:
+            self._handle_exception(e)
 
     async def delete_collection(self, collection_id: str, user_id: str) -> bool:
         """Koleksiyonu siler"""
         try:
-            collection_object_id = ObjectId(collection_id)
-            user_object_id = ObjectId(user_id)
+            collection_object_id = self._convert_to_object_id(collection_id)
+            user_object_id = self._convert_to_object_id(user_id)
 
             # Koleksiyonun var olduğunu ve kullanıcıya ait olduğunu kontrol et
             collection = await self.get_collection(str(collection_object_id))
@@ -166,20 +178,17 @@ class CollectionService:
 
             result = await self.db.collections.delete_one({"_id": collection_object_id})
             return result.deleted_count > 0
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Geçersiz ID formatı: {str(e)}",
-            )
+        except Exception as e:
+            self._handle_exception(e)
 
     async def add_content_to_collection(
         self, collection_id: str, content_id: str, user_id: str
     ) -> bool:
         """Koleksiyona içerik ekler"""
         try:
-            collection_object_id = ObjectId(collection_id)
-            content_object_id = ObjectId(content_id)
-            user_object_id = ObjectId(user_id)
+            collection_object_id = self._convert_to_object_id(collection_id)
+            content_object_id = self._convert_to_object_id(content_id)
+            user_object_id = self._convert_to_object_id(user_id)
 
             # Koleksiyonun var olduğunu ve kullanıcıya ait olduğunu kontrol et
             collection = await self.get_collection(str(collection_object_id))
@@ -212,20 +221,17 @@ class CollectionService:
                 )
                 return result.modified_count > 0
             return False
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Geçersiz ID formatı: {str(e)}",
-            )
+        except Exception as e:
+            self._handle_exception(e)
 
     async def remove_content_from_collection(
         self, collection_id: str, content_id: str, user_id: str
     ) -> bool:
         """Koleksiyondan içerik çıkarır"""
         try:
-            collection_object_id = ObjectId(collection_id)
-            content_object_id = ObjectId(content_id)
-            user_object_id = ObjectId(user_id)
+            collection_object_id = self._convert_to_object_id(collection_id)
+            content_object_id = self._convert_to_object_id(content_id)
+            user_object_id = self._convert_to_object_id(user_id)
 
             # Koleksiyonun var olduğunu ve kullanıcıya ait olduğunu kontrol et
             collection = await self.get_collection(str(collection_object_id))
@@ -251,11 +257,8 @@ class CollectionService:
                 )
                 return result.modified_count > 0
             return False
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Geçersiz ID formatı: {str(e)}",
-            )
+        except Exception as e:
+            self._handle_exception(e)
 
     async def get_public_collections(
         self, user_id: str, skip: int = 0, limit: int = 10
@@ -274,8 +277,5 @@ class CollectionService:
                 CollectionInDB(**{**collection, "_id": str(collection["_id"])})
                 for collection in collections
             ]
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Geçersiz kullanıcı ID formatı: {str(e)}",
-            )
+        except Exception as e:
+            self._handle_exception(e)

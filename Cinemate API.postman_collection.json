@@ -1,0 +1,4058 @@
+{
+	"info": {
+		"_postman_id": "f2c52267-a610-4a32-8217-e40c7e327f25",
+		"name": "Cinemate API",
+		"description": "Film ve dizi koleksiyonları için API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36747129"
+	},
+	"item": [
+		{
+			"name": "api/v1",
+			"item": [
+				{
+					"name": "auth/auth",
+					"item": [
+						{
+							"name": "Register",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"string@gmail.com\",\n  \"name\": \"string\",\n  \"password\": \"string\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/auth/auth/register",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"auth",
+										"register"
+									]
+								},
+								"description": "Yeni kullanıcı kaydı"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"email\": \"string@gmail.com\",\n  \"name\": \"string\",\n  \"password\": \"string\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/auth/auth/register",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"auth",
+												"auth",
+												"register"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"access_token\": \"minim\",\n  \"token_type\": \"dolore deserun\"\n}"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"email\": \"string@gmail.com\",\n  \"name\": \"string\",\n  \"password\": \"string\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/auth/auth/register",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"auth",
+												"auth",
+												"register"
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						},
+						{
+							"name": "Login",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/x-www-form-urlencoded"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "username",
+											"value": "string@gmail.com",
+											"description": "(Required) "
+										},
+										{
+											"key": "password",
+											"value": "string",
+											"description": "(Required) "
+										},
+										{
+											"key": "grant_type",
+											"value": "password"
+										},
+										{
+											"key": "scope",
+											"value": ""
+										},
+										{
+											"key": "client_id",
+											"value": "in minim"
+										},
+										{
+											"key": "client_secret",
+											"value": "sunt eli"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/auth/auth/login",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"auth",
+										"login"
+									]
+								},
+								"description": "Kullanıcı girişi"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "username",
+													"value": "string@gmail.com",
+													"description": "(Required) "
+												},
+												{
+													"key": "password",
+													"value": "string",
+													"description": "(Required) "
+												},
+												{
+													"key": "grant_type",
+													"value": "password"
+												},
+												{
+													"key": "scope",
+													"value": ""
+												},
+												{
+													"key": "client_id",
+													"value": "in minim"
+												},
+												{
+													"key": "client_secret",
+													"value": "sunt eli"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/auth/auth/login",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"auth",
+												"auth",
+												"login"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"access_token\": \"minim\",\n  \"token_type\": \"dolore deserun\"\n}"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "username",
+													"value": "string@gmail.com",
+													"description": "(Required) "
+												},
+												{
+													"key": "password",
+													"value": "string",
+													"description": "(Required) "
+												},
+												{
+													"key": "grant_type",
+													"value": "password"
+												},
+												{
+													"key": "scope",
+													"value": ""
+												},
+												{
+													"key": "client_id",
+													"value": "in minim"
+												},
+												{
+													"key": "client_secret",
+													"value": "sunt eli"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/auth/auth/login",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"auth",
+												"auth",
+												"login"
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						},
+						{
+							"name": "Read Users Me",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/auth/auth/me",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"auth",
+										"me"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/auth/auth/me",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"auth",
+												"auth",
+												"me"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"email\": \"Uf1q5k@vmYojLkiMNQknsbUcHwt.pj\",\n  \"name\": \"consectetur\",\n  \"created_at\": \"1998-10-08T10:22:26.188Z\",\n  \"updated_at\": \"2021-06-30T05:08:05.914Z\"\n}"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "collections/collections",
+					"item": [
+						{
+							"name": "{collection_id}",
+							"item": [
+								{
+									"name": "contents/{content_id}",
+									"item": [
+										{
+											"name": "Add Content To Collection",
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id/contents/:content_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"collections",
+														"collections",
+														":collection_id",
+														"contents",
+														":content_id"
+													],
+													"variable": [
+														{
+															"key": "collection_id",
+															"value": "67f96a863f8df36b74a707c7",
+															"description": "(Required) "
+														},
+														{
+															"key": "content_id",
+															"value": "67f9283fc0c6592681ab895c",
+															"description": "(Required) "
+														}
+													]
+												},
+												"description": "Koleksiyona içerik ekler"
+											},
+											"response": [
+												{
+													"name": "Successful Response",
+													"originalRequest": {
+														"method": "POST",
+														"header": [
+															{
+																"key": "Accept",
+																"value": "application/json"
+															}
+														],
+														"url": {
+															"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id/contents/:content_id",
+															"host": [
+																"{{baseUrl}}"
+															],
+															"path": [
+																"api",
+																"v1",
+																"collections",
+																"collections",
+																":collection_id",
+																"contents",
+																":content_id"
+															],
+															"variable": [
+																{
+																	"key": "collection_id",
+																	"value": "culpa ut labore qui deserunt",
+																	"description": "(Required) "
+																},
+																{
+																	"key": "content_id",
+																	"value": "sunt ut irure",
+																	"description": "(Required) "
+																}
+															]
+														}
+													},
+													"status": "OK",
+													"code": 200,
+													"_postman_previewlanguage": "json",
+													"header": [
+														{
+															"key": "Content-Type",
+															"value": "application/json"
+														}
+													],
+													"cookie": [],
+													"body": "{}"
+												},
+												{
+													"name": "Validation Error",
+													"originalRequest": {
+														"method": "POST",
+														"header": [
+															{
+																"key": "Accept",
+																"value": "application/json"
+															}
+														],
+														"url": {
+															"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id/contents/:content_id",
+															"host": [
+																"{{baseUrl}}"
+															],
+															"path": [
+																"api",
+																"v1",
+																"collections",
+																"collections",
+																":collection_id",
+																"contents",
+																":content_id"
+															],
+															"variable": [
+																{
+																	"key": "collection_id",
+																	"value": "culpa ut labore qui deserunt",
+																	"description": "(Required) "
+																},
+																{
+																	"key": "content_id",
+																	"value": "sunt ut irure",
+																	"description": "(Required) "
+																}
+															]
+														}
+													},
+													"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+													"code": 422,
+													"_postman_previewlanguage": "json",
+													"header": [
+														{
+															"key": "Content-Type",
+															"value": "application/json"
+														}
+													],
+													"cookie": [],
+													"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+												}
+											]
+										},
+										{
+											"name": "Remove Content From Collection",
+											"request": {
+												"method": "DELETE",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id/contents/:content_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"collections",
+														"collections",
+														":collection_id",
+														"contents",
+														":content_id"
+													],
+													"variable": [
+														{
+															"key": "collection_id",
+															"value": "67f96a863f8df36b74a707c7",
+															"description": "(Required) "
+														},
+														{
+															"key": "content_id",
+															"value": "67f9283fc0c6592681ab895c",
+															"description": "(Required) "
+														}
+													]
+												},
+												"description": "Koleksiyondan içerik çıkarır"
+											},
+											"response": [
+												{
+													"name": "Successful Response",
+													"originalRequest": {
+														"method": "DELETE",
+														"header": [
+															{
+																"key": "Accept",
+																"value": "application/json"
+															}
+														],
+														"url": {
+															"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id/contents/:content_id",
+															"host": [
+																"{{baseUrl}}"
+															],
+															"path": [
+																"api",
+																"v1",
+																"collections",
+																"collections",
+																":collection_id",
+																"contents",
+																":content_id"
+															],
+															"variable": [
+																{
+																	"key": "collection_id",
+																	"value": "culpa ut labore qui deserunt",
+																	"description": "(Required) "
+																},
+																{
+																	"key": "content_id",
+																	"value": "sunt ut irure",
+																	"description": "(Required) "
+																}
+															]
+														}
+													},
+													"status": "OK",
+													"code": 200,
+													"_postman_previewlanguage": "json",
+													"header": [
+														{
+															"key": "Content-Type",
+															"value": "application/json"
+														}
+													],
+													"cookie": [],
+													"body": "{}"
+												},
+												{
+													"name": "Validation Error",
+													"originalRequest": {
+														"method": "DELETE",
+														"header": [
+															{
+																"key": "Accept",
+																"value": "application/json"
+															}
+														],
+														"url": {
+															"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id/contents/:content_id",
+															"host": [
+																"{{baseUrl}}"
+															],
+															"path": [
+																"api",
+																"v1",
+																"collections",
+																"collections",
+																":collection_id",
+																"contents",
+																":content_id"
+															],
+															"variable": [
+																{
+																	"key": "collection_id",
+																	"value": "culpa ut labore qui deserunt",
+																	"description": "(Required) "
+																},
+																{
+																	"key": "content_id",
+																	"value": "sunt ut irure",
+																	"description": "(Required) "
+																}
+															]
+														}
+													},
+													"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+													"code": 422,
+													"_postman_previewlanguage": "json",
+													"header": [
+														{
+															"key": "Content-Type",
+															"value": "application/json"
+														}
+													],
+													"cookie": [],
+													"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+												}
+											]
+										}
+									]
+								},
+								{
+									"name": "Get Collection",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"collections",
+												"collections",
+												":collection_id"
+											],
+											"variable": [
+												{
+													"key": "collection_id",
+													"value": "67f96a863f8df36b74a707c7",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "Koleksiyon detaylarını getirir"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "GET",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"collections",
+														"collections",
+														":collection_id"
+													],
+													"variable": [
+														{
+															"key": "collection_id",
+															"value": "culpa ut labore qui deserunt",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"title\": \"in\",\n  \"_id\": \"fugiat officia Duis commodo\",\n  \"user_id\": \"ad laborum eiusmod id reprehenderit\",\n  \"content_ids\": [\n    \"et cillum sed\",\n    \"commodo\"\n  ],\n  \"created_at\": \"1960-06-15T00:21:24.945Z\",\n  \"updated_at\": \"1969-05-28T05:43:39.693Z\",\n  \"description\": \"eu esse\",\n  \"is_public\": true\n}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "GET",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"collections",
+														"collections",
+														":collection_id"
+													],
+													"variable": [
+														{
+															"key": "collection_id",
+															"value": "culpa ut labore qui deserunt",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								},
+								{
+									"name": "Update Collection",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"title\": \"dolor enim commodo proident\",\n  \"is_public\": true\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"collections",
+												"collections",
+												":collection_id"
+											],
+											"variable": [
+												{
+													"key": "collection_id",
+													"value": "67f96a863f8df36b74a707c7",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "Koleksiyonu günceller"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "PUT",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"title\": \"dolor enim commodo proident\",\n  \"description\": \"cillum occaecat\",\n  \"is_public\": true\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"collections",
+														"collections",
+														":collection_id"
+													],
+													"variable": [
+														{
+															"key": "collection_id",
+															"value": "culpa ut labore qui deserunt",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"title\": \"in\",\n  \"_id\": \"fugiat officia Duis commodo\",\n  \"user_id\": \"ad laborum eiusmod id reprehenderit\",\n  \"content_ids\": [\n    \"et cillum sed\",\n    \"commodo\"\n  ],\n  \"created_at\": \"1960-06-15T00:21:24.945Z\",\n  \"updated_at\": \"1969-05-28T05:43:39.693Z\",\n  \"description\": \"eu esse\",\n  \"is_public\": true\n}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "PUT",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"title\": \"dolor enim commodo proident\",\n  \"description\": \"cillum occaecat\",\n  \"is_public\": true\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"collections",
+														"collections",
+														":collection_id"
+													],
+													"variable": [
+														{
+															"key": "collection_id",
+															"value": "culpa ut labore qui deserunt",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								},
+								{
+									"name": "Delete Collection",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"collections",
+												"collections",
+												":collection_id"
+											],
+											"variable": [
+												{
+													"key": "collection_id",
+													"value": "67f982d843b7b3ae8a8bb30c",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "Koleksiyonu siler"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "DELETE",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"collections",
+														"collections",
+														":collection_id"
+													],
+													"variable": [
+														{
+															"key": "collection_id",
+															"value": "culpa ut labore qui deserunt",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "DELETE",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/collections/collections/:collection_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"collections",
+														"collections",
+														":collection_id"
+													],
+													"variable": [
+														{
+															"key": "collection_id",
+															"value": "culpa ut labore qui deserunt",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "Create Collection",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"dolore aliqua laborum\",\n  \"is_public\": true\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/collections/collections/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"collections",
+										"collections",
+										""
+									]
+								},
+								"description": "Yeni koleksiyon oluşturur"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"title\": \"dolore aliqua laborum\",\n  \"description\": \"irure dolore exercitation\",\n  \"is_public\": true\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/collections/collections/",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"collections",
+												"collections",
+												""
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"title\": \"in\",\n  \"_id\": \"fugiat officia Duis commodo\",\n  \"user_id\": \"ad laborum eiusmod id reprehenderit\",\n  \"content_ids\": [\n    \"et cillum sed\",\n    \"commodo\"\n  ],\n  \"created_at\": \"1960-06-15T00:21:24.945Z\",\n  \"updated_at\": \"1969-05-28T05:43:39.693Z\",\n  \"description\": \"eu esse\",\n  \"is_public\": true\n}"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"title\": \"dolore aliqua laborum\",\n  \"description\": \"irure dolore exercitation\",\n  \"is_public\": true\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/collections/collections/",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"collections",
+												"collections",
+												""
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						},
+						{
+							"name": "Get User Collections",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/collections/collections/?skip=0&limit=10",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"collections",
+										"collections",
+										""
+									],
+									"query": [
+										{
+											"key": "skip",
+											"value": "0"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								},
+								"description": "Kullanıcının koleksiyonlarını getirir"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/collections/collections/?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"collections",
+												"collections",
+												""
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "[\n  {\n    \"title\": \"magna irure\",\n    \"_id\": \"ipsum dolor adipisicing pariatur\",\n    \"user_id\": \"Excepteur cillum\",\n    \"content_ids\": [\n      \"esse non proident\",\n      \"eu aliqua ut Lorem\"\n    ],\n    \"created_at\": \"1980-08-30T03:30:51.103Z\",\n    \"updated_at\": \"1955-02-20T14:07:07.285Z\",\n    \"description\": \"elit\",\n    \"is_public\": true\n  },\n  {\n    \"title\": \"pr\",\n    \"_id\": \"minim do\",\n    \"user_id\": \"et dol\",\n    \"content_ids\": [\n      \"pariatur adipisicing\",\n      \"ut id ea anim ad\"\n    ],\n    \"created_at\": \"1949-06-20T20:19:15.078Z\",\n    \"updated_at\": \"1970-07-24T04:07:08.656Z\",\n    \"description\": \"quis officia dolor deserunt\",\n    \"is_public\": true\n  }\n]"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/collections/collections/?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"collections",
+												"collections",
+												""
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						},
+						{
+							"name": "Get User Public Collections",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/collections/collections/user/:user_id?skip=0&limit=10",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"collections",
+										"collections",
+										"user",
+										":user_id"
+									],
+									"query": [
+										{
+											"key": "skip",
+											"value": "0"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									],
+									"variable": [
+										{
+											"key": "user_id",
+											"value": "67f9252f55def6da19169cbd",
+											"description": "(Required) "
+										}
+									]
+								},
+								"description": "Kullanıcının public koleksiyonlarını getirir"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/collections/collections/user/:user_id?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"collections",
+												"collections",
+												"user",
+												":user_id"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											],
+											"variable": [
+												{
+													"key": "user_id",
+													"value": "Duis minim",
+													"description": "(Required) "
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "[\n  {\n    \"title\": \"aute n\",\n    \"_id\": \"consectetur commodo irure\",\n    \"user_id\": \"adipisicin\",\n    \"content_ids\": [\n      \"pariatur labore enim qui id\",\n      \"minim\"\n    ],\n    \"created_at\": \"1994-08-04T01:14:57.830Z\",\n    \"updated_at\": \"1978-08-20T17:27:52.930Z\",\n    \"description\": \"dolore ullamco\",\n    \"is_public\": true\n  },\n  {\n    \"title\": \"cupidatat nisi tempor anim do\",\n    \"_id\": \"Duis aute ut\",\n    \"user_id\": \"in exercitation consequat\",\n    \"content_ids\": [\n      \"in mollit laboris in sint\",\n      \"in ex\"\n    ],\n    \"created_at\": \"1984-01-24T15:57:40.632Z\",\n    \"updated_at\": \"2024-07-18T20:16:33.161Z\",\n    \"description\": \"sit pariatur\",\n    \"is_public\": true\n  }\n]"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/collections/collections/user/:user_id?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"collections",
+												"collections",
+												"user",
+												":user_id"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											],
+											"variable": [
+												{
+													"key": "user_id",
+													"value": "Duis minim",
+													"description": "(Required) "
+												}
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "contents/contents",
+					"item": [
+						{
+							"name": "{content_id}",
+							"item": [
+								{
+									"name": "Get Content",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/contents/contents/:content_id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contents",
+												"contents",
+												":content_id"
+											],
+											"variable": [
+												{
+													"key": "content_id",
+													"value": "67f9283fc0c6592681ab895c"
+												}
+											]
+										},
+										"description": "Belirli bir içeriğin detaylarını getirir"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "GET",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/contents/contents/:content_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"contents",
+														"contents",
+														":content_id"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"title\": \"velit sit cupidatat in\",\n  \"description\": \"reprehenderit irure labore\",\n  \"genres\": [\n    \"enim\",\n    \"voluptate elit\"\n  ],\n  \"year\": -96805946,\n  \"_id\": \"pariatur\",\n  \"average_rating\": -26231639.391993195,\n  \"num_likes\": -92182036,\n  \"num_watches\": -50697556,\n  \"num_ratings\": 93259414,\n  \"num_comments\": 13123179,\n  \"created_at\": \"1963-09-02T09:53:54.699Z\",\n  \"updated_at\": \"1958-04-30T04:16:25.240Z\"\n}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "GET",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/contents/contents/:content_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"contents",
+														"contents",
+														":content_id"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								},
+								{
+									"name": "Update Content",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"title\": \"Benim Filmim\",\n  \"description\": \"sit aliquip\",\n  \"genres\": [\n    \"Kişisel Gelişim\",\n    \"laboris proident\"\n  ],\n  \"year\": 3496514\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/contents/contents/:content_id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contents",
+												"contents",
+												":content_id"
+											],
+											"variable": [
+												{
+													"key": "content_id",
+													"value": "67f9283fc0c6592681ab895c",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "İçeriği günceller"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "PUT",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"title\": \"proident consectetur in\",\n  \"description\": \"cupi\",\n  \"genres\": [\n    \"reprehenderit do ea\",\n    \"Lorem Duis irure\"\n  ],\n  \"year\": 48617139\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/contents/contents/:content_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"contents",
+														"contents",
+														":content_id"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"title\": \"velit sit cupidatat in\",\n  \"description\": \"reprehenderit irure labore\",\n  \"genres\": [\n    \"enim\",\n    \"voluptate elit\"\n  ],\n  \"year\": -96805946,\n  \"_id\": \"pariatur\",\n  \"average_rating\": -26231639.391993195,\n  \"num_likes\": -92182036,\n  \"num_watches\": -50697556,\n  \"num_ratings\": 93259414,\n  \"num_comments\": 13123179,\n  \"created_at\": \"1963-09-02T09:53:54.699Z\",\n  \"updated_at\": \"1958-04-30T04:16:25.240Z\"\n}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "PUT",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"title\": \"proident consectetur in\",\n  \"description\": \"cupi\",\n  \"genres\": [\n    \"reprehenderit do ea\",\n    \"Lorem Duis irure\"\n  ],\n  \"year\": 48617139\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/contents/contents/:content_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"contents",
+														"contents",
+														":content_id"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								},
+								{
+									"name": "Delete Content",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/contents/contents/:content_id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contents",
+												"contents",
+												":content_id"
+											],
+											"variable": [
+												{
+													"key": "content_id",
+													"value": "67f98607ab6e7749bc5162c9",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "İçeriği siler"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "DELETE",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/contents/contents/:content_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"contents",
+														"contents",
+														":content_id"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "DELETE",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/contents/contents/:content_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"contents",
+														"contents",
+														":content_id"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "List Contents",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/contents/contents/?skip=0&limit=10",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contents",
+										"contents",
+										""
+									],
+									"query": [
+										{
+											"key": "skip",
+											"value": "0"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "genre",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "year",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "İçerikleri listeler ve filtreler"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/contents/contents/?skip=0&limit=10&genre=nulla ut aliqua sed&year=-86404709",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contents",
+												"contents",
+												""
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												},
+												{
+													"key": "genre",
+													"value": "nulla ut aliqua sed"
+												},
+												{
+													"key": "year",
+													"value": "-86404709"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "[\n  {\n    \"title\": \"Ut ad amet ut\",\n    \"description\": \"tempor eu nisi aliquip\",\n    \"genres\": [\n      \"laborum Excepteur Ut comm\",\n      \"ut commodo tempor irure\"\n    ],\n    \"year\": -17477446,\n    \"_id\": \"id exercitation deserunt\",\n    \"average_rating\": 6545678.973939538,\n    \"num_likes\": -64952910,\n    \"num_watches\": 12995105,\n    \"num_ratings\": 14681620,\n    \"num_comments\": 2034416,\n    \"created_at\": \"2015-10-30T19:08:45.041Z\",\n    \"updated_at\": \"1999-05-04T20:22:03.371Z\"\n  },\n  {\n    \"title\": \"ad et incididunt in Ut\",\n    \"description\": \"amet\",\n    \"genres\": [\n      \"pari\",\n      \"non magna\"\n    ],\n    \"year\": -53128984,\n    \"_id\": \"ullamco occaecat culpa\",\n    \"average_rating\": -3269190.719088748,\n    \"num_likes\": 5069355,\n    \"num_watches\": 70581890,\n    \"num_ratings\": -68973225,\n    \"num_comments\": 32788944,\n    \"created_at\": \"2019-07-10T17:24:10.974Z\",\n    \"updated_at\": \"1976-12-13T20:08:43.134Z\"\n  }\n]"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/contents/contents/?skip=0&limit=10&genre=nulla ut aliqua sed&year=-86404709",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contents",
+												"contents",
+												""
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												},
+												{
+													"key": "genre",
+													"value": "nulla ut aliqua sed"
+												},
+												{
+													"key": "year",
+													"value": "-86404709"
+												}
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						},
+						{
+							"name": "Create Content - Inception",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Inception\",\n  \"description\": \"Rüyalar içinde geçen bir bilim kurgu filmi\",\n  \"genres\": [\n    \"Bilim Kurgu\",\n    \"Aksiyon\",\n    \"Gerilim\"\n  ],\n  \"year\": 2010\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/contents/contents/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contents",
+										"contents",
+										""
+									]
+								},
+								"description": "Inception filmini ekler"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"title\": \"Inception\",\n  \"description\": \"Rüyalar içinde geçen bir bilim kurgu filmi\",\n  \"genres\": [\n    \"Bilim Kurgu\",\n    \"Aksiyon\",\n    \"Gerilim\"\n  ],\n  \"year\": 2010\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/contents/contents/",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contents",
+												"contents",
+												""
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"title\": \"velit sit cupidatat in\",\n  \"description\": \"reprehenderit irure labore\",\n  \"genres\": [\n    \"enim\",\n    \"voluptate elit\"\n  ],\n  \"year\": -96805946,\n  \"_id\": \"pariatur\",\n  \"average_rating\": -26231639.391993195,\n  \"num_likes\": -92182036,\n  \"num_watches\": -50697556,\n  \"num_ratings\": 93259414,\n  \"num_comments\": 13123179,\n  \"created_at\": \"1963-09-02T09:53:54.699Z\",\n  \"updated_at\": \"1958-04-30T04:16:25.240Z\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Search Contents",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/contents/contents/search/?query=Inception&skip=0&limit=10",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contents",
+										"contents",
+										"search",
+										""
+									],
+									"query": [
+										{
+											"key": "query",
+											"value": "Inception",
+											"description": "(Required) "
+										},
+										{
+											"key": "skip",
+											"value": "0"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								},
+								"description": "İçeriklerde arama yapar"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/contents/contents/search/?query=officia nisi sint&skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contents",
+												"contents",
+												"search",
+												""
+											],
+											"query": [
+												{
+													"key": "query",
+													"value": "officia nisi sint"
+												},
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "[\n  {\n    \"title\": \"labore\",\n    \"description\": \"laboris cillum reprehenderit nisi\",\n    \"genres\": [\n      \"ut reprehenderit ut magna\",\n      \"exercitation labore anim\"\n    ],\n    \"year\": 80186803,\n    \"_id\": \"culpa ut\",\n    \"average_rating\": 89804776.51216403,\n    \"num_likes\": 20934430,\n    \"num_watches\": 28119513,\n    \"num_ratings\": -26149435,\n    \"num_comments\": 97577056,\n    \"created_at\": \"1962-05-05T11:03:32.547Z\",\n    \"updated_at\": \"1969-03-24T23:30:35.405Z\"\n  },\n  {\n    \"title\": \"ea amet reprehenderit exercitation\",\n    \"description\": \"irure sunt aute\",\n    \"genres\": [\n      \"sint in esse tempor\",\n      \"laborum commodo\"\n    ],\n    \"year\": 83938026,\n    \"_id\": \"eu\",\n    \"average_rating\": -90927093.4311888,\n    \"num_likes\": -50260494,\n    \"num_watches\": 49017038,\n    \"num_ratings\": -5363754,\n    \"num_comments\": 5289915,\n    \"created_at\": \"1991-12-20T00:44:40.936Z\",\n    \"updated_at\": \"2006-05-03T08:14:40.278Z\"\n  }\n]"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/contents/contents/search/?query=officia nisi sint&skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contents",
+												"contents",
+												"search",
+												""
+											],
+											"query": [
+												{
+													"key": "query",
+													"value": "officia nisi sint"
+												},
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "comments/comments",
+					"item": [
+						{
+							"name": "{content_id}",
+							"item": [
+								{
+									"name": "Create Comment",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"text\": \"cupidatat fugi\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/comments/comments/:content_id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"comments",
+												"comments",
+												":content_id"
+											],
+											"variable": [
+												{
+													"key": "content_id",
+													"value": "67f9283fc0c6592681ab895c",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "İçeriğe yorum ekler"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"content_id\": \"Excepteur mollit\",\n  \"user_id\": \"culpa amet Excepteur ut officia\",\n  \"text\": \"cupidatat fugi\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/comments/comments/:content_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"comments",
+														"comments",
+														":content_id"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"content_id\": \"non ut labore elit\",\n  \"user_id\": \"sed Excepteur eu minim\",\n  \"text\": \"exercitation laboris aliqua Duis\",\n  \"_id\": \"labore\",\n  \"created_at\": \"1982-05-22T23:31:27.859Z\",\n  \"updated_at\": \"2003-05-31T20:27:45.793Z\"\n}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"content_id\": \"Excepteur mollit\",\n  \"user_id\": \"culpa amet Excepteur ut officia\",\n  \"text\": \"cupidatat fugi\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/comments/comments/:content_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"comments",
+														"comments",
+														":content_id"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								},
+								{
+									"name": "Get Comments",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/comments/comments/:content_id?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"comments",
+												"comments",
+												":content_id"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											],
+											"variable": [
+												{
+													"key": "content_id",
+													"value": "67f9283fc0c6592681ab895c",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "İçeriğin yorumlarını getirir"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "GET",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/comments/comments/:content_id?skip=0&limit=10",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"comments",
+														"comments",
+														":content_id"
+													],
+													"query": [
+														{
+															"key": "skip",
+															"value": "0"
+														},
+														{
+															"key": "limit",
+															"value": "10"
+														}
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "[\n  {\n    \"content_id\": \"esse\",\n    \"user_id\": \"in reprehenderit quis Excepteur\",\n    \"text\": \"voluptate aliquip Duis\",\n    \"_id\": \"enim sunt cupidat\",\n    \"created_at\": \"1985-09-12T19:15:16.945Z\",\n    \"updated_at\": \"1994-12-08T08:40:21.409Z\"\n  },\n  {\n    \"content_id\": \"nisi\",\n    \"user_id\": \"voluptate consectetur\",\n    \"text\": \"ullamco aute ex nostrud proident\",\n    \"_id\": \"in amet do commodo\",\n    \"created_at\": \"1992-02-04T21:49:24.506Z\",\n    \"updated_at\": \"1982-04-22T20:01:56.668Z\"\n  }\n]"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "GET",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/comments/comments/:content_id?skip=0&limit=10",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"comments",
+														"comments",
+														":content_id"
+													],
+													"query": [
+														{
+															"key": "skip",
+															"value": "0"
+														},
+														{
+															"key": "limit",
+															"value": "10"
+														}
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "{comment_id}",
+							"item": [
+								{
+									"name": "Update Comment",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"text\": \"empati\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/comments/comments/:comment_id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"comments",
+												"comments",
+												":comment_id"
+											],
+											"variable": [
+												{
+													"key": "comment_id",
+													"value": "67f93cd9b81a950829f423ba",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "Yorumu günceller"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "PUT",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"text\": \"dese\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/comments/comments/:comment_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"comments",
+														"comments",
+														":comment_id"
+													],
+													"variable": [
+														{
+															"key": "comment_id",
+															"value": "incididunt des",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"content_id\": \"non ut labore elit\",\n  \"user_id\": \"sed Excepteur eu minim\",\n  \"text\": \"exercitation laboris aliqua Duis\",\n  \"_id\": \"labore\",\n  \"created_at\": \"1982-05-22T23:31:27.859Z\",\n  \"updated_at\": \"2003-05-31T20:27:45.793Z\"\n}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "PUT",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"text\": \"dese\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/comments/comments/:comment_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"comments",
+														"comments",
+														":comment_id"
+													],
+													"variable": [
+														{
+															"key": "comment_id",
+															"value": "incididunt des",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								},
+								{
+									"name": "Delete Comment",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/comments/comments/:comment_id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"comments",
+												"comments",
+												":comment_id"
+											],
+											"variable": [
+												{
+													"key": "comment_id",
+													"value": "67f93cd9b81a950829f423ba",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "Yorumu siler"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "DELETE",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/comments/comments/:comment_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"comments",
+														"comments",
+														":comment_id"
+													],
+													"variable": [
+														{
+															"key": "comment_id",
+															"value": "incididunt des",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "DELETE",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/comments/comments/:comment_id",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"comments",
+														"comments",
+														":comment_id"
+													],
+													"variable": [
+														{
+															"key": "comment_id",
+															"value": "incididunt des",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "Get User Comments",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/comments/comments/user/me/?skip=0&limit=10",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"comments",
+										"comments",
+										"user",
+										"me",
+										""
+									],
+									"query": [
+										{
+											"key": "skip",
+											"value": "0"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								},
+								"description": "Kullanıcının yorumlarını getirir"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/comments/comments/user/:user_id?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"comments",
+												"comments",
+												"user",
+												":user_id"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											],
+											"variable": [
+												{
+													"key": "user_id",
+													"value": "Duis minim",
+													"description": "(Required) "
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "[\n  {\n    \"content_id\": \"occaecat ipsum Ut\",\n    \"user_id\": \"incididunt\",\n    \"text\": \"est Ut amet elit dolor\",\n    \"_id\": \"sit ut Lorem nulla\",\n    \"created_at\": \"2010-11-04T19:45:13.425Z\",\n    \"updated_at\": \"1959-01-18T00:56:57.244Z\"\n  },\n  {\n    \"content_id\": \"Duis\",\n    \"user_id\": \"Ut commodo\",\n    \"text\": \"incididunt exercitation\",\n    \"_id\": \"Ut culpa in\",\n    \"created_at\": \"1976-05-24T08:12:29.004Z\",\n    \"updated_at\": \"2014-11-03T22:43:36.658Z\"\n  }\n]"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/comments/comments/user/:user_id?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"comments",
+												"comments",
+												"user",
+												":user_id"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											],
+											"variable": [
+												{
+													"key": "user_id",
+													"value": "Duis minim",
+													"description": "(Required) "
+												}
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "user-contents/user-content",
+					"item": [
+						{
+							"name": "{content_id}",
+							"item": [
+								{
+									"name": "Like Content",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/like",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"user-contents",
+												"user-content",
+												":content_id",
+												"like"
+											],
+											"variable": [
+												{
+													"key": "content_id",
+													"value": "67f9283fc0c6592681ab895c"
+												}
+											]
+										},
+										"description": "İçeriği beğenir veya beğenmeyi kaldırır"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/like",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"user-contents",
+														"user-content",
+														":content_id",
+														"like"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"user_id\": \"consequat ullamco t\",\n  \"content_id\": \"Duis do\",\n  \"_id\": \"ullamco proident\",\n  \"last_interacted_at\": \"1972-10-19T20:11:39.247Z\",\n  \"is_liked\": false,\n  \"is_watched\": false,\n  \"in_watchlist\": false,\n  \"rated\": 45472779.805972785\n}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/like",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"user-contents",
+														"user-content",
+														":content_id",
+														"like"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								},
+								{
+									"name": "Mark As Watched",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/watch",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"user-contents",
+												"user-content",
+												":content_id",
+												"watch"
+											],
+											"variable": [
+												{
+													"key": "content_id",
+													"value": "67f9283fc0c6592681ab895c",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "İçeriği izlendi olarak işaretler"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/watch",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"user-contents",
+														"user-content",
+														":content_id",
+														"watch"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"user_id\": \"consequat ullamco t\",\n  \"content_id\": \"Duis do\",\n  \"_id\": \"ullamco proident\",\n  \"last_interacted_at\": \"1972-10-19T20:11:39.247Z\",\n  \"is_liked\": false,\n  \"is_watched\": false,\n  \"in_watchlist\": false,\n  \"rated\": 45472779.805972785\n}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/watch",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"user-contents",
+														"user-content",
+														":content_id",
+														"watch"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								},
+								{
+									"name": "Toggle Watchlist",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/watchlist",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"user-contents",
+												"user-content",
+												":content_id",
+												"watchlist"
+											],
+											"variable": [
+												{
+													"key": "content_id",
+													"value": "67f9283fc0c6592681ab895c",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "İçeriği izleme listesine ekler veya çıkarır"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/watchlist",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"user-contents",
+														"user-content",
+														":content_id",
+														"watchlist"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"user_id\": \"consequat ullamco t\",\n  \"content_id\": \"Duis do\",\n  \"_id\": \"ullamco proident\",\n  \"last_interacted_at\": \"1972-10-19T20:11:39.247Z\",\n  \"is_liked\": false,\n  \"is_watched\": false,\n  \"in_watchlist\": false,\n  \"rated\": 45472779.805972785\n}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/watchlist",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"user-contents",
+														"user-content",
+														":content_id",
+														"watchlist"
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								},
+								{
+									"name": "Rate Content",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/rate?rating=4.86589358892801",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"user-contents",
+												"user-content",
+												":content_id",
+												"rate"
+											],
+											"query": [
+												{
+													"key": "rating",
+													"value": "4.86589358892801",
+													"description": "(Required) "
+												}
+											],
+											"variable": [
+												{
+													"key": "content_id",
+													"value": "67f9283fc0c6592681ab895c",
+													"description": "(Required) "
+												}
+											]
+										},
+										"description": "İçeriği puanlar"
+									},
+									"response": [
+										{
+											"name": "Successful Response",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/rate?rating=4.86589358892801",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"user-contents",
+														"user-content",
+														":content_id",
+														"rate"
+													],
+													"query": [
+														{
+															"key": "rating",
+															"value": "4.86589358892801"
+														}
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"user_id\": \"consequat ullamco t\",\n  \"content_id\": \"Duis do\",\n  \"_id\": \"ullamco proident\",\n  \"last_interacted_at\": \"1972-10-19T20:11:39.247Z\",\n  \"is_liked\": false,\n  \"is_watched\": false,\n  \"in_watchlist\": false,\n  \"rated\": 45472779.805972785\n}"
+										},
+										{
+											"name": "Validation Error",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/api/v1/user-contents/user-content/:content_id/rate?rating=4.86589358892801",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"user-contents",
+														"user-content",
+														":content_id",
+														"rate"
+													],
+													"query": [
+														{
+															"key": "rating",
+															"value": "4.86589358892801"
+														}
+													],
+													"variable": [
+														{
+															"key": "content_id",
+															"value": "sunt ut irure",
+															"description": "(Required) "
+														}
+													]
+												}
+											},
+											"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+											"code": 422,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "Get Watch History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/user-contents/user-content/history?skip=0&limit=10",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"user-contents",
+										"user-content",
+										"history"
+									],
+									"query": [
+										{
+											"key": "skip",
+											"value": "0"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								},
+								"description": "Kullanıcının izleme geçmişini getirir"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/user-contents/user-content/history?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"user-contents",
+												"user-content",
+												"history"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "[\n  {\n    \"user_id\": \"Duis cillum\",\n    \"content_id\": \"ullam\",\n    \"_id\": \"in\",\n    \"last_interacted_at\": \"2024-01-01T09:58:18.115Z\",\n    \"is_liked\": false,\n    \"is_watched\": false,\n    \"in_watchlist\": false,\n    \"rated\": -24945433.9637226\n  },\n  {\n    \"user_id\": \"in minim nisi proident ut\",\n    \"content_id\": \"Lorem ea ipsum sint\",\n    \"_id\": \"quis\",\n    \"last_interacted_at\": \"1952-05-29T12:46:42.967Z\",\n    \"is_liked\": false,\n    \"is_watched\": false,\n    \"in_watchlist\": false,\n    \"rated\": -99619697.48832798\n  }\n]"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/user-contents/user-content/history?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"user-contents",
+												"user-content",
+												"history"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Watchlist",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/user-contents/user-content/watchlist?skip=0&limit=10",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"user-contents",
+										"user-content",
+										"watchlist"
+									],
+									"query": [
+										{
+											"key": "skip",
+											"value": "0"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								},
+								"description": "Kullanıcının izleme listesini getirir"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/user-contents/user-content/watchlist?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"user-contents",
+												"user-content",
+												"watchlist"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "[\n  {\n    \"user_id\": \"est\",\n    \"content_id\": \"proident aute\",\n    \"_id\": \"proident consequat culpa sint occaecat\",\n    \"last_interacted_at\": \"1978-09-04T15:46:27.522Z\",\n    \"is_liked\": false,\n    \"is_watched\": false,\n    \"in_watchlist\": false,\n    \"rated\": 53276027.73380366\n  },\n  {\n    \"user_id\": \"ex reprehenderit\",\n    \"content_id\": \"Excepteur aliqua deserunt\",\n    \"_id\": \"pariatur sint ut in\",\n    \"last_interacted_at\": \"1996-12-08T05:35:07.445Z\",\n    \"is_liked\": false,\n    \"is_watched\": false,\n    \"in_watchlist\": false,\n    \"rated\": -98104415.91224767\n  }\n]"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/user-contents/user-content/watchlist?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"user-contents",
+												"user-content",
+												"watchlist"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Liked Contents",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/user-contents/user-content/liked?skip=0&limit=10",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"user-contents",
+										"user-content",
+										"liked"
+									],
+									"query": [
+										{
+											"key": "skip",
+											"value": "0"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								},
+								"description": "Kullanıcının beğendiği içerikleri getirir"
+							},
+							"response": [
+								{
+									"name": "Successful Response",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/user-contents/user-content/liked?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"user-contents",
+												"user-content",
+												"liked"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "[\n  {\n    \"user_id\": \"\",\n    \"content_id\": \"tempor pariatur minim\",\n    \"_id\": \"veniam ad exercitation\",\n    \"last_interacted_at\": \"2016-07-16T10:37:55.574Z\",\n    \"is_liked\": false,\n    \"is_watched\": false,\n    \"in_watchlist\": false,\n    \"rated\": 96201724.69594559\n  },\n  {\n    \"user_id\": \"esse aliquip\",\n    \"content_id\": \"dolor officia amet elit\",\n    \"_id\": \"Duis labore sit\",\n    \"last_interacted_at\": \"2011-04-12T17:13:58.014Z\",\n    \"is_liked\": false,\n    \"is_watched\": false,\n    \"in_watchlist\": false,\n    \"rated\": -88354435.17140855\n  }\n]"
+								},
+								{
+									"name": "Validation Error",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/api/v1/user-contents/user-content/liked?skip=0&limit=10",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"user-contents",
+												"user-content",
+												"liked"
+											],
+											"query": [
+												{
+													"key": "skip",
+													"value": "0"
+												},
+												{
+													"key": "limit",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+									"code": 422,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"detail\": [\n    {\n      \"loc\": [\n        \"in eu dolore pariatu\",\n        \"dolor proident quis labore\"\n      ],\n      \"msg\": \"Lorem tempor in\",\n      \"type\": \"ut in\"\n    },\n    {\n      \"loc\": [\n        \"quis Excepteur sunt\",\n        \"elit dolor\"\n      ],\n      \"msg\": \"Duis\",\n      \"type\": \"sint deserunt\"\n    }\n  ]\n}"
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Root",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						""
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Successful Response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{}"
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "REMOVED_EXPIRED_TOKEN",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://127.0.0.1:8000",
+			"type": "string"
+		}
+	]
+}

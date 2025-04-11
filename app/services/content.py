@@ -1,7 +1,14 @@
 from typing import List, Optional
+from datetime import datetime
+from fastapi import HTTPException, status
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.models.content import ContentCreate, ContentUpdate, ContentInDB
+from app.models.content import (
+    ContentCreate,
+    ContentUpdate,
+    ContentInDB,
+    ContentResponse,
+)
 from app.db.mongodb import get_database
 
 
@@ -9,88 +16,151 @@ class ContentService:
     def __init__(self, db: AsyncIOMotorDatabase = None):
         self.db = db or get_database()
 
-    async def create_content(self, content: ContentCreate) -> ContentInDB:
-        """Yeni içerik oluşturur"""
+    def _convert_to_object_id(self, id_str: str) -> ObjectId:
+        """String ID'yi ObjectId'ye dönüştürür"""
         try:
-            content_dict = content.dict()
-            result = await self.db.contents.insert_one(content_dict)
-            created_content = await self.db.contents.find_one(
-                {"_id": result.inserted_id}
+            return ObjectId(id_str)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Geçersiz ID formatı: {id_str}",
             )
-            return ContentInDB(
-                **{**created_content, "_id": str(created_content["_id"])}
+
+    def _handle_exception(self, e: Exception) -> None:
+        """Hata yakalama ve HTTPException fırlatma"""
+        if isinstance(e, HTTPException):
+            raise e
+        if isinstance(e, ValueError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Geçersiz veri: {str(e)}",
             )
-        except Exception as e:
-            raise ValueError(f"İçerik oluşturulurken hata oluştu: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Bir hata oluştu: {str(e)}",
+        )
 
-    async def get_content(self, content_id: str) -> Optional[ContentInDB]:
-        """Belirli bir içeriği getirir"""
-        try:
-            content = await self.db.contents.find_one({"_id": ObjectId(content_id)})
-            if content:
-                return ContentInDB(**{**content, "_id": str(content["_id"])})
-            return None
-        except Exception as e:
-            raise ValueError(f"İçerik getirilirken hata oluştu: {str(e)}")
-
-    async def get_contents(
-        self, skip: int = 0, limit: int = 10, search: Optional[str] = None
-    ) -> List[ContentInDB]:
-        """Tüm içerikleri getirir"""
+    async def list_contents(
+        self,
+        skip: int = 0,
+        limit: int = 10,
+        genre: Optional[str] = None,
+        year: Optional[int] = None,
+    ) -> List[ContentResponse]:
+        """İçerikleri listeler ve filtreler"""
         try:
             query = {}
-            if search:
-                query = {
-                    "$or": [
-                        {"title": {"$regex": search, "$options": "i"}},
-                        {"description": {"$regex": search, "$options": "i"}},
-                    ]
-                }
+            if genre:
+                query["genres"] = genre
+            if year:
+                query["year"] = year
 
             contents = (
                 await self.db.contents.find(query)
-                .sort("created_at", -1)
                 .skip(skip)
                 .limit(limit)
                 .to_list(length=limit)
             )
-            return [
-                ContentInDB(**{**content, "_id": str(content["_id"])})
-                for content in contents
-            ]
+            # ObjectId'leri string'e çevir
+            contents = [{**content, "_id": str(content["_id"])} for content in contents]
+            return [ContentResponse(**content) for content in contents]
         except Exception as e:
-            raise ValueError(f"İçerikler getirilirken hata oluştu: {str(e)}")
+            self._handle_exception(e)
+
+    async def get_content(self, content_id: str) -> ContentResponse:
+        """Belirli bir içeriğin detaylarını getirir"""
+        try:
+            content_object_id = self._convert_to_object_id(content_id)
+            content = await self.db.contents.find_one({"_id": content_object_id})
+            if not content:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="İçerik bulunamadı"
+                )
+            content["_id"] = str(content["_id"])
+            return ContentResponse(**content)
+        except Exception as e:
+            self._handle_exception(e)
+
+    async def create_content(self, content: ContentCreate) -> ContentResponse:
+        """Yeni içerik oluşturur"""
+        try:
+            content_dict = content.dict()
+            content_dict.update(
+                {
+                    "created_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow(),
+                    "average_rating": 0.0,
+                    "num_likes": 0,
+                    "num_watches": 0,
+                    "num_ratings": 0,
+                    "num_comments": 0,
+                }
+            )
+
+            result = await self.db.contents.insert_one(content_dict)
+            content_dict["_id"] = str(result.inserted_id)
+
+            return ContentResponse(**content_dict)
+        except Exception as e:
+            self._handle_exception(e)
 
     async def update_content(
         self, content_id: str, content_update: ContentUpdate
-    ) -> ContentInDB:
+    ) -> ContentResponse:
         """İçeriği günceller"""
         try:
-            content = await self.db.contents.find_one({"_id": ObjectId(content_id)})
+            content_object_id = self._convert_to_object_id(content_id)
+            content = await self.db.contents.find_one({"_id": content_object_id})
             if not content:
-                raise ValueError("İçerik bulunamadı")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="İçerik bulunamadı"
+                )
 
             update_data = content_update.dict(exclude_unset=True)
-            await self.db.contents.update_one(
-                {"_id": ObjectId(content_id)}, {"$set": update_data}
-            )
-            updated_content = await self.db.contents.find_one(
-                {"_id": ObjectId(content_id)}
-            )
-            return ContentInDB(
-                **{**updated_content, "_id": str(updated_content["_id"])}
-            )
-        except Exception as e:
-            raise ValueError(f"İçerik güncellenirken hata oluştu: {str(e)}")
+            update_data["updated_at"] = datetime.utcnow()
 
-    async def delete_content(self, content_id: str) -> bool:
+            await self.db.contents.update_one(
+                {"_id": content_object_id}, {"$set": update_data}
+            )
+
+            updated_content = await self.db.contents.find_one(
+                {"_id": content_object_id}
+            )
+            updated_content["_id"] = str(updated_content["_id"])
+            return ContentResponse(**updated_content)
+        except Exception as e:
+            self._handle_exception(e)
+
+    async def delete_content(self, content_id: str) -> dict:
         """İçeriği siler"""
         try:
-            content = await self.db.contents.find_one({"_id": ObjectId(content_id)})
-            if not content:
-                raise ValueError("İçerik bulunamadı")
-
-            result = await self.db.contents.delete_one({"_id": ObjectId(content_id)})
-            return result.deleted_count > 0
+            content_object_id = self._convert_to_object_id(content_id)
+            result = await self.db.contents.delete_one({"_id": content_object_id})
+            if result.deleted_count == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="İçerik bulunamadı"
+                )
+            return {"message": "İçerik başarıyla silindi"}
         except Exception as e:
-            raise ValueError(f"İçerik silinirken hata oluştu: {str(e)}")
+            self._handle_exception(e)
+
+    async def search_contents(
+        self, query: str, skip: int = 0, limit: int = 10
+    ) -> List[ContentResponse]:
+        """İçeriklerde arama yapar"""
+        try:
+            contents = (
+                await self.db.contents.find(
+                    {"$text": {"$search": query}}, {"score": {"$meta": "textScore"}}
+                )
+                .sort([("score", {"$meta": "textScore"})])
+                .skip(skip)
+                .limit(limit)
+                .to_list(length=limit)
+            )
+
+            # ObjectId'leri string'e çevir
+            contents = [{**content, "_id": str(content["_id"])} for content in contents]
+            return [ContentResponse(**content) for content in contents]
+        except Exception as e:
+            self._handle_exception(e)

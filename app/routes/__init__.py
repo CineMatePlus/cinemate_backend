@@ -1,3 +1,7 @@
+"""
+API Routes
+"""
+
 from fastapi import APIRouter
 from app.routes import auth, collection, content, comment, user_content
 
