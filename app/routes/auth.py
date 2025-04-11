@@ -1,80 +1,74 @@
-from fastapi import APIRouter, HTTPException, Depends, Request
-from app.models.user_model import UserIn, UserInDB, UserOut
-from app.database.mongo import user_collection
-from app.utils.security import (
-    decode_access_token,
-    hash_password,
-    verify_password,
-    create_access_token,
-    get_current_user,
-    create_refresh_token,
-)
+from datetime import timedelta
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from app.models.user import UserInDB, UserResponse
+from app.models.auth import Token, RegisterRequest
+from app.services.auth import AuthService
+from app.core.config import settings
+from datetime import datetime
 
-auth_router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Servis örneği
+auth_service = AuthService()
 
 
-@auth_router.post("/register", response_model=UserOut)
-async def register(user: UserIn):
-    # Kullanıcı zaten var mı kontrol edelim
-    if await user_collection.find_one({"email": user.email}):
-        raise HTTPException(status_code=400, detail="Email already registered")
+@router.post("/register", response_model=Token)
+async def register(user_data: RegisterRequest):
+    """Yeni kullanıcı kaydı"""
+    # Kullanıcının var olup olmadığını kontrol et
+    existing_user = await auth_service.get_user(user_data.email)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+        )
 
-    # Şifreyi hashleyelim
-    hashed_pw = hash_password(user.password)
+    # Kullanıcıyı oluştur
+    hashed_password = auth_service.get_password_hash(user_data.password)
+    user_dict = {
+        "email": user_data.email,
+        "name": user_data.name,
+        "hashed_password": hashed_password,
+        "is_active": True,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
+    }
 
-    # Yeni kullanıcıyı veritabanına ekleyelim
-    new_user = UserInDB(
-        email=user.email,
-        hashed_password=hashed_pw,
-        collections=[],  # Başlangıçta boş koleksiyon listesi
-    )
-
-    # Varsayılan koleksiyonları ekle
-    new_user.add_default_collections()
-
-    # Kullanıcıyı veritabanına kaydet
-    await user_collection.insert_one(new_user.dict(exclude_unset=True))
+    # Kullanıcıyı veritabanına ekle
+    result = await auth_service.db.users.insert_one(user_dict)
+    user_dict["_id"] = str(result.inserted_id)
 
     # Token oluştur
-    token = create_access_token({"sub": user.email})
-    refresh_token = create_refresh_token({"sub": user.email})
+    access_token = auth_service.create_access_token(
+        data={"sub": user_data.email},
+        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
 
-    return {"email": user.email, "token": token, "refresh_token": refresh_token}
-
-
-@auth_router.post("/login", response_model=UserOut)
-async def login(user: UserIn):
-    email = user.email
-    password = user.password
-    db_user = await user_collection.find_one({"email": email})
-    if not db_user or not verify_password(password, db_user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    access_token = create_access_token({"sub": email})
-    refresh_token = create_refresh_token({"sub": email})
-    return {"access_token": access_token, "refresh_token": refresh_token}
+    return Token(access_token=access_token, token_type="bearer")
 
 
-@auth_router.get("/me")
-async def read_current_user(current_user: dict = Depends(get_current_user)):
-    # current_user, get_current_user'dan dönen kullanıcı bilgilerini içerir
-    return current_user
+@router.post("/login", response_model=Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """Kullanıcı girişi"""
+    user = await auth_service.authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Token oluştur
+    access_token = auth_service.create_access_token(
+        data={"sub": user.email},
+        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+
+    return Token(access_token=access_token, token_type="bearer")
 
 
-@auth_router.post("/refresh")
-async def refresh_token(request: Request):
-    body = await request.json()
-    token = body.get("refresh_token")
-
-    if not token:
-        raise HTTPException(status_code=400, detail="Refresh token missing")
-
-    # Token'ı çöz ve email'i al
-    payload = decode_access_token(token)
-    email = payload.get("sub")
-    if not email:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    # Yeni access token oluştur
-    new_access_token = create_access_token({"sub": email})
-    return {"token": new_access_token}
+@router.get("/me", response_model=UserResponse)
+async def read_users_me(
+    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+):
+    return UserResponse(**{**current_user.dict(), "_id": current_user.id})

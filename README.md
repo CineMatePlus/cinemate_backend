@@ -2,3 +2,8 @@ izlediklerim ve izleyeceklerim sistemsel koleksiyonlar, custom koleksiyon ise ku
 
 jwt oauth bir şeyler kullanıyoruz.
 
+db.contents.createIndex({ title: "text", description: "text" })
+
+CORS
+
+

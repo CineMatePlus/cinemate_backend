@@ -1,7 +1,7 @@
 # tests/test_auth.py
 import pytest
 from httpx import AsyncClient
-from app.database.mongo import user_collection
+from app.database.mongodb import user_collection
 from app.utils.security import hash_password
 from app.main import app
 
