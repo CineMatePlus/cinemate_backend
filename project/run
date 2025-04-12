@@ -1,1 +1,2 @@
 poetry run uvicorn app.main:app --reload
+poetry run behave tests/features
