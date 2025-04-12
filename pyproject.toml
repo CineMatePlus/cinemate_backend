@@ -17,6 +17,8 @@ dependencies = [
     "motor (>=3.7.0,<4.0.0)",
     "python-multipart (>=0.0.20,<0.0.21)",
     "requests (>=2.32.3,<3.0.0)",
+    "behave (>=1.2.6,<2.0.0)",
+    "allure-behave (>=2.14.0,<3.0.0)",
 ]
 
 

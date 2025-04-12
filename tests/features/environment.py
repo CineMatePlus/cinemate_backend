@@ -26,6 +26,7 @@ def mongodb_connection(context):
     yield context.db
     # Testler bittiğinde veritabanını temizle
     loop = asyncio.get_event_loop()
+    loop.run_until_complete(context.mongo_client.drop_database("cinetest"))
 
 
 def before_all(context):

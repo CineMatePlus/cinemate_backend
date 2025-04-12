@@ -2,6 +2,21 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Behave Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "behave",
+            "args": [
+                "tests/features"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+
+
+        {
             "name": "Python: FastAPI",
             "type": "debugpy",
             "request": "launch",
