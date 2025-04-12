@@ -1,0 +1,3 @@
+"""
+Cinemate Backend Application
+"""

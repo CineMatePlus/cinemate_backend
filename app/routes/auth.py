@@ -1,80 +1,29 @@
-from fastapi import APIRouter, HTTPException, Depends, Request
-from app.models.user_model import UserIn, UserInDB, UserOut
-from app.database.mongo import user_collection
-from app.utils.security import (
-    decode_access_token,
-    hash_password,
-    verify_password,
-    create_access_token,
-    get_current_user,
-    create_refresh_token,
-)
+from fastapi import APIRouter, Depends
+from fastapi.security import OAuth2PasswordRequestForm
+from app.models.user import UserInDB, UserResponse
+from app.models.auth import Token, RegisterRequest
+from app.services.auth import AuthService
 
-auth_router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Servis örneği
+auth_service = AuthService()
 
 
-@auth_router.post("/register", response_model=UserOut)
-async def register(user: UserIn):
-    # Kullanıcı zaten var mı kontrol edelim
-    if await user_collection.find_one({"email": user.email}):
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    # Şifreyi hashleyelim
-    hashed_pw = hash_password(user.password)
-
-    # Yeni kullanıcıyı veritabanına ekleyelim
-    new_user = UserInDB(
-        email=user.email,
-        hashed_password=hashed_pw,
-        collections=[],  # Başlangıçta boş koleksiyon listesi
-    )
-
-    # Varsayılan koleksiyonları ekle
-    new_user.add_default_collections()
-
-    # Kullanıcıyı veritabanına kaydet
-    await user_collection.insert_one(new_user.dict(exclude_unset=True))
-
-    # Token oluştur
-    token = create_access_token({"sub": user.email})
-    refresh_token = create_refresh_token({"sub": user.email})
-
-    return {"email": user.email, "token": token, "refresh_token": refresh_token}
+@router.post("/register", response_model=Token)
+async def register(user_data: RegisterRequest):
+    """Yeni kullanıcı kaydı"""
+    return await auth_service.register_user(user_data.dict())
 
 
-@auth_router.post("/login", response_model=UserOut)
-async def login(user: UserIn):
-    email = user.email
-    password = user.password
-    db_user = await user_collection.find_one({"email": email})
-    if not db_user or not verify_password(password, db_user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    access_token = create_access_token({"sub": email})
-    refresh_token = create_refresh_token({"sub": email})
-    return {"access_token": access_token, "refresh_token": refresh_token}
+@router.post("/login", response_model=Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """Kullanıcı girişi"""
+    return await auth_service.login_user(form_data.username, form_data.password)
 
 
-@auth_router.get("/me")
-async def read_current_user(current_user: dict = Depends(get_current_user)):
-    # current_user, get_current_user'dan dönen kullanıcı bilgilerini içerir
-    return current_user
-
-
-@auth_router.post("/refresh")
-async def refresh_token(request: Request):
-    body = await request.json()
-    token = body.get("refresh_token")
-
-    if not token:
-        raise HTTPException(status_code=400, detail="Refresh token missing")
-
-    # Token'ı çöz ve email'i al
-    payload = decode_access_token(token)
-    email = payload.get("sub")
-    if not email:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    # Yeni access token oluştur
-    new_access_token = create_access_token({"sub": email})
-    return {"token": new_access_token}
+@router.get("/me", response_model=UserResponse)
+async def read_users_me(
+    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+):
+    return UserResponse(**{**current_user.dict(), "_id": current_user.id})

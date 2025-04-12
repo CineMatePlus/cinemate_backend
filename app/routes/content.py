@@ -1,62 +1,75 @@
+from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query
-from app.models.content_model import ContentCreate, ContentInDB
-from app.database.mongo import db
-from bson import ObjectId
+from app.models.content import (
+    ContentResponse,
+    ContentCreate,
+    ContentUpdate,
+)
+from app.services.content import ContentService
+from app.services.auth import AuthService
+from app.models.user import UserInDB
+
+router = APIRouter(prefix="/contents", tags=["contents"])
+
+# Servis örneği
+content_service = ContentService()
+auth_service = AuthService()
 
 
-content_router = APIRouter(prefix="/content", tags=["Content"])
-
-
-@content_router.post("/")
-async def create_content(content: ContentCreate):
-    result = await db["contents"].insert_one(content.dict())
-    return {"id": str(result.inserted_id)}
-
-
-@content_router.get("/search", response_model=List[ContentInDB])
-async def search_content(
-    q: Optional[str] = None,
-    type: Optional[str] = Query(None, regex="^(movie|series)$"),
+@router.get("/", response_model=List[ContentResponse])
+async def list_contents(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     genre: Optional[str] = None,
     year: Optional[int] = None,
-    year_min: Optional[int] = None,
-    year_max: Optional[int] = None,
 ):
-    query = {}
-
-    if q:
-        query["title"] = {"$regex": q, "$options": "i"}
-    if type:
-        query["type"] = type
-    if genre:
-        query["genres"] = genre
-    if year:
-        query["release_year"] = year
-    else:
-        if year_min or year_max:
-            query["release_year"] = {}
-        if year_min:
-            query["release_year"]["$gte"] = year_min
-        if year_max:
-            query["release_year"]["$lte"] = year_max
-
-    contents_cursor = db["contents"].find(query)
-    contents = await contents_cursor.to_list(length=None)
-    return [{**item, "_id": str(item["_id"])} for item in contents]
+    """İçerikleri listeler ve filtreler"""
+    return await content_service.list_contents(
+        skip=skip, limit=limit, genre=genre, year=year
+    )
 
 
-@content_router.get("/", response_model=List[ContentInDB])
-async def list_contents():
-    contents_cursor = db["contents"].find()
-    contents = await contents_cursor.to_list(length=None)
-    return [{**item, "_id": str(item["_id"])} for item in contents]
-
-
-@content_router.get("/{content_id}", response_model=ContentInDB)
+@router.get("/{content_id}", response_model=ContentResponse)
 async def get_content(content_id: str):
-    content = await db["contents"].find_one({"_id": ObjectId(content_id)})
-    if not content:
-        raise HTTPException(status_code=404, detail="Content not found")
-    content["_id"] = str(content["_id"])
-    return content
+    """Belirli bir içeriğin detaylarını getirir"""
+    return await content_service.get_content(content_id=content_id)
+
+
+@router.post("/", response_model=ContentResponse)
+async def create_content(
+    content: ContentCreate,
+    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+):
+    """Yeni içerik oluşturur"""
+    return await content_service.create_content(content=content)
+
+
+@router.put("/{content_id}", response_model=ContentResponse)
+async def update_content(
+    content_id: str,
+    content_update: ContentUpdate,
+    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+):
+    """İçeriği günceller"""
+    return await content_service.update_content(
+        content_id=content_id, content_update=content_update
+    )
+
+
+@router.delete("/{content_id}")
+async def delete_content(
+    content_id: str,
+    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+):
+    """İçeriği siler"""
+    return await content_service.delete_content(content_id=content_id)
+
+
+@router.get("/search/", response_model=List[ContentResponse])
+async def search_contents(
+    query: str = Query(..., min_length=1),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+):
+    """İçeriklerde arama yapar"""
+    return await content_service.search_contents(query=query, skip=skip, limit=limit)
