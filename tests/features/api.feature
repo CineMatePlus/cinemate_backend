@@ -9,7 +9,7 @@ Feature: User API Tests
     And the API should be healthy
     
   Scenario: Register a new user
-    When I send a POST request to "/api/v1/auth/auth/register" with body
+    When I send a POST request to "/api/v1/auth/register" with body
       """
       {
         "email": "testuser@example.com",
@@ -22,7 +22,7 @@ Feature: User API Tests
     And the response should contain "token_type"
 
   Scenario: Login with registered user
-    When I send a POST request to "/api/v1/auth/auth/login" with form data
+    When I send a POST request to "/api/v1/auth/login" with form data
       | username | password |
       | testuser@example.com | testpassword123 |
     Then the response status code should be 200
@@ -31,7 +31,7 @@ Feature: User API Tests
 
   Scenario: Get current user profile with token
     Given I have a valid access token
-    When I send a GET request to "/api/v1/auth/auth/me" with headers
+    When I send a GET request to "/api/v1/auth/me" with headers
       | Authorization | 
       |Bearer {token} |
     Then the response status code should be 200

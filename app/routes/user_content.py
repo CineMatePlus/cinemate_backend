@@ -5,7 +5,7 @@ from app.services.user_content import UserContentService
 from app.services.auth import AuthService
 from app.models.user import UserInDB
 
-router = APIRouter(prefix="/user-content", tags=["user-contents"])
+router = APIRouter(tags=["user-contents"])
 
 # Servis örneği
 user_content_service = UserContentService()

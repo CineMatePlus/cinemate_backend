@@ -9,7 +9,7 @@ from app.services.comment import CommentService
 from app.services.auth import AuthService
 from app.models.user import UserInDB
 
-router = APIRouter(prefix="/comments", tags=["comments"])
+router = APIRouter(tags=["comments"])
 
 # Servis örneği
 comment_service = CommentService()

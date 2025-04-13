@@ -10,7 +10,7 @@ from app.services.collection import CollectionService
 from app.services.auth import AuthService
 from app.models.user import UserInDB
 
-router = APIRouter(prefix="/collections", tags=["collections"])
+router = APIRouter(tags=["collections"])
 
 # Servis örneği
 collection_service = CollectionService()

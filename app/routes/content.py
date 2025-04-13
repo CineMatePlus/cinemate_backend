@@ -9,7 +9,7 @@ from app.services.content import ContentService
 from app.services.auth import AuthService
 from app.models.user import UserInDB
 
-router = APIRouter(prefix="/contents", tags=["contents"])
+router = APIRouter(tags=["contents"])
 
 # Servis örneği
 content_service = ContentService()

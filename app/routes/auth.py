@@ -4,7 +4,7 @@ from app.models.user import UserInDB, UserResponse
 from app.models.auth import Token, RegisterRequest
 from app.services.auth import AuthService
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(tags=["auth"])
 
 # Servis örneği
 auth_service = AuthService()

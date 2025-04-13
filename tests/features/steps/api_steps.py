@@ -10,13 +10,13 @@ def step_impl(context):
     context.response = requests.get("http://localhost:8000/")
 
 # Register a new user
-@when('I send a POST request to "/api/v1/auth/auth/register" with body')
+@when('I send a POST request to "/api/v1/auth/register" with body')
 def step_impl(context):
     data = json.loads(context.text)
-    context.response = requests.post(f"{BASE_URL}/auth/auth/register", json=data)
+    context.response = requests.post(f"{BASE_URL}/auth/register", json=data)
 
 # Login with registered user
-@when('I send a POST request to "/api/v1/auth/auth/login" with form data')
+@when('I send a POST request to "/api/v1/auth/login" with form data')
 def step_impl(context):
     row = context.table[0]
     headers = {
@@ -31,7 +31,7 @@ def step_impl(context):
         "client_secret": "sunt eli"
     }
     context.response = requests.post(
-        f"{BASE_URL}/auth/auth/login",
+        f"{BASE_URL}/auth/login",
         headers=headers,
         data=form_data
     )
@@ -48,7 +48,7 @@ def step_impl(context):
         "name": "Test User",
         "password": "testpassword123"
     }
-    response = requests.post(f"{BASE_URL}/auth/auth/register", json=register_data)
+    response = requests.post(f"{BASE_URL}/auth/register", json=register_data)
     assert response.status_code == 200
     
     # Sonra giriş yap
@@ -64,20 +64,20 @@ def step_impl(context):
         "client_secret": "sunt eli"
     }
     response = requests.post(
-        f"{BASE_URL}/auth/auth/login",
+        f"{BASE_URL}/auth/login",
         headers=headers,
         data=form_data
     )
     assert response.status_code == 200
     context.access_token = response.json()["access_token"]
 
-@when('I send a GET request to "/api/v1/auth/auth/me" with headers')
+@when('I send a GET request to "/api/v1/auth/me" with headers')
 def step_impl(context):
     row = context.table[0]
     headers = {
         'Authorization': f'Bearer {context.access_token}'
     }
-    context.response = requests.get(f"{BASE_URL}/auth/auth/me", headers=headers)
+    context.response = requests.get(f"{BASE_URL}/auth/me", headers=headers)
 
 @then('the response status code should be 200')
 def step_impl(context):
