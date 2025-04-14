@@ -15,7 +15,7 @@ auth_service = AuthService()
 @router.post("/{content_id}/like", response_model=UserContentResponse)
 async def like_content(
     content_id: str,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """İçeriği beğenir veya beğenmeyi kaldırır"""
     return await user_content_service.like_content(
@@ -26,7 +26,7 @@ async def like_content(
 @router.post("/{content_id}/watch", response_model=UserContentResponse)
 async def mark_as_watched(
     content_id: str,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """İçeriği izlendi olarak işaretler veya işareti kaldırır"""
     return await user_content_service.mark_as_watched(
@@ -37,7 +37,7 @@ async def mark_as_watched(
 @router.post("/{content_id}/watchlist", response_model=UserContentResponse)
 async def toggle_watchlist(
     content_id: str,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """İçeriği izleme listesine ekler veya çıkarır"""
     return await user_content_service.toggle_watchlist(
@@ -49,7 +49,7 @@ async def toggle_watchlist(
 async def rate_content(
     content_id: str,
     rating: int = Query(..., ge=1, le=10),
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """İçeriği puanlar"""
     return await user_content_service.rate_content(
@@ -61,7 +61,7 @@ async def rate_content(
 async def get_watch_history(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Kullanıcının izleme geçmişini getirir"""
     return await user_content_service.get_watch_history(
@@ -73,7 +73,7 @@ async def get_watch_history(
 async def get_watchlist(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Kullanıcının izleme listesini getirir"""
     return await user_content_service.get_watchlist(
@@ -85,7 +85,7 @@ async def get_watchlist(
 async def get_liked_contents(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Kullanıcının beğendiği içerikleri getirir"""
     return await user_content_service.get_liked_contents(

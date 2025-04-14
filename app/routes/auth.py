@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends
-from fastapi.security import OAuth2PasswordRequestForm
-from app.models.user import UserInDB, UserResponse
-from app.models.auth import Token, RegisterRequest
+from fastapi import APIRouter, Header
+from app.models.auth import RegisterRequest, LoginRequest, AuthResponse
+from app.models.user import UserResponse
 from app.services.auth import AuthService
 
 router = APIRouter(tags=["auth"])
@@ -10,20 +9,33 @@ router = APIRouter(tags=["auth"])
 auth_service = AuthService()
 
 
-@router.post("/register", response_model=Token)
+@router.post("/register", response_model=AuthResponse)
 async def register(user_data: RegisterRequest):
     """Yeni kullanıcı kaydı"""
     return await auth_service.register_user(user_data.dict())
 
 
-@router.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+@router.post("/login", response_model=AuthResponse)
+async def login(login_data: LoginRequest):
     """Kullanıcı girişi"""
-    return await auth_service.login_user(form_data.username, form_data.password)
+    return await auth_service.login_user(
+        username=login_data.email,
+        password=login_data.password
+    )
 
 
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    authorization: str = Header(..., description="Bearer token")
 ):
-    return UserResponse(**{**current_user.dict(), "_id": current_user.id})
+    """Mevcut kullanıcı bilgilerini getir"""
+    return await auth_service.get_user_from_token(authorization)
+
+
+# TODO: Token response dönebilir
+@router.post("/refresh", response_model=AuthResponse)
+async def refresh_token(
+    authorization: str = Header(..., description="Bearer token")
+):
+    """Token yenileme"""
+    return await auth_service.refresh_token(authorization)

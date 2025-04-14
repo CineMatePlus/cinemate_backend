@@ -8,10 +8,6 @@ class UserBase(BaseModel):
     name: str
 
 
-class UserCreate(UserBase):
-    password: str
-
-
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     name: Optional[str] = None
@@ -21,7 +17,6 @@ class UserUpdate(BaseModel):
 class UserInDB(UserBase):
     id: str = Field(alias="_id")
     hashed_password: str
-    is_active: bool = True
     created_at: datetime
     updated_at: datetime
 

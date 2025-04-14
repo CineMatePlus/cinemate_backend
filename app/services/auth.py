@@ -1,18 +1,16 @@
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException, status, Header
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
-from app.models.user import UserInDB
-from app.models.auth import Token, TokenData
+from app.models.user import UserInDB, UserResponse
+from app.models.auth import TokenData, AuthResponse
 from app.db.mongodb import get_database
 
 # Şifreleme ayarları
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 class AuthService:
@@ -92,16 +90,33 @@ class AuthService:
             raise credentials_exception
         return user
 
-    async def get_current_active_user(
-        self, token: str = Depends(oauth2_scheme)
-    ) -> UserInDB:
-        """Aktif kullanıcıyı getirme"""
-        user = await self.get_current_user(token)
-        if not user.is_active:
-            raise HTTPException(status_code=400, detail="Inactive user")
-        return user
+    async def get_user_from_token(self, authorization: str) -> AuthResponse:
+        """Authorization header'ından kullanıcı bilgilerini getir"""
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication scheme"
+            )
+        
+        token = authorization.replace("Bearer ", "")
+        try:
+            user = await self.get_current_user(token)
+            return UserResponse(
+                    _id=user.id,
+                    email=user.email,
+                    name=user.name,
+                    created_at=user.created_at,
+                    updated_at=user.updated_at
+                )
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
 
-    async def register_user(self, user_data: dict) -> Token:
+    async def register_user(self, user_data: dict) -> AuthResponse:
         """Yeni kullanıcı kaydı ve token oluşturma"""
         # Kullanıcının var olup olmadığını kontrol et
         existing_user = await self.get_user(user_data["email"])
@@ -117,7 +132,6 @@ class AuthService:
             "email": user_data["email"],
             "name": user_data["name"],
             "hashed_password": hashed_password,
-            "is_active": True,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
         }
@@ -132,9 +146,18 @@ class AuthService:
             expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         )
 
-        return Token(access_token=access_token, token_type="bearer")
+        return AuthResponse(
+            user=UserResponse(
+                _id=user_dict["_id"],
+                email=user_dict["email"],
+                name=user_dict["name"],
+                created_at=user_dict["created_at"],
+                updated_at=user_dict["updated_at"]
+            ),
+            access_token=access_token
+        )
 
-    async def login_user(self, username: str, password: str) -> Token:
+    async def login_user(self, username: str, password: str) -> AuthResponse:
         """Kullanıcı girişi ve token oluşturma"""
         user = await self.authenticate_user(username, password)
         if not user:
@@ -150,4 +173,50 @@ class AuthService:
             expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         )
 
-        return Token(access_token=access_token, token_type="bearer")
+        return AuthResponse(
+            user=UserResponse(
+                _id=user.id,
+                email=user.email,
+                name=user.name,
+                is_active=user.is_active,
+                created_at=user.created_at,
+                updated_at=user.updated_at
+            ),
+            access_token=access_token
+        )
+
+    async def refresh_token(self, authorization: str) -> AuthResponse:
+        """Mevcut token'ı yeniler"""
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication scheme"
+            )
+        
+        token = authorization.replace("Bearer ", "")
+        try:
+            user = await self.get_current_user(token)
+            
+            # Yeni token oluştur
+            new_token = self.create_access_token(
+                data={"sub": user.email},
+                expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+            )
+
+            return AuthResponse(
+                user=UserResponse(
+                    _id=user.id,
+                    email=user.email,
+                    name=user.name,
+                    created_at=user.created_at,
+                    updated_at=user.updated_at
+                ),
+                access_token=new_token
+            )
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )

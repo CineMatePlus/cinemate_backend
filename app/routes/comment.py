@@ -20,7 +20,7 @@ auth_service = AuthService()
 async def create_comment(
     content_id: str,
     comment: CommentCreate,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """İçeriğe yorum ekler"""
     return await comment_service.create_comment(
@@ -44,7 +44,7 @@ async def get_comments(
 async def update_comment(
     comment_id: str,
     comment_update: CommentUpdate,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Yorumu günceller"""
     return await comment_service.update_comment(
@@ -55,7 +55,7 @@ async def update_comment(
 @router.delete("/{comment_id}")
 async def delete_comment(
     comment_id: str,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Yorumu siler"""
     return await comment_service.delete_comment(
@@ -67,7 +67,7 @@ async def delete_comment(
 async def get_user_comments(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Kullanıcının kendi yorumlarını getirir"""
     return await comment_service.get_user_comments(

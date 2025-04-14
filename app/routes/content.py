@@ -38,7 +38,7 @@ async def get_content(content_id: str):
 @router.post("/", response_model=ContentResponse)
 async def create_content(
     content: ContentCreate,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Yeni içerik oluşturur"""
     return await content_service.create_content(content=content)
@@ -48,7 +48,7 @@ async def create_content(
 async def update_content(
     content_id: str,
     content_update: ContentUpdate,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """İçeriği günceller"""
     return await content_service.update_content(
@@ -59,7 +59,7 @@ async def update_content(
 @router.delete("/{content_id}")
 async def delete_content(
     content_id: str,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """İçeriği siler"""
     return await content_service.delete_content(content_id=content_id)

@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 from typing import Optional
+from app.models.user import UserResponse
 
 
 class Token(BaseModel):
     """JWT token modeli"""
 
     access_token: str
-    token_type: str
 
 
 class TokenData(BaseModel):
@@ -28,3 +28,9 @@ class LoginRequest(BaseModel):
 
     email: str
     password: str
+
+
+class AuthResponse(BaseModel):
+    """Kimlik doğrulama yanıt modeli"""
+    user: UserResponse
+    access_token: str

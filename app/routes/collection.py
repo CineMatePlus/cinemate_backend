@@ -20,7 +20,7 @@ auth_service = AuthService()
 @router.post("/", response_model=CollectionResponse)
 async def create_collection(
     collection: CollectionCreate,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Yeni koleksiyon oluşturur"""
     created_collection = await collection_service.create_collection(
@@ -35,7 +35,7 @@ async def create_collection(
 async def get_user_collections(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Kullanıcının koleksiyonlarını getirir"""
     collections = await collection_service.get_collections(
@@ -50,7 +50,7 @@ async def get_user_collections(
 @router.get("/{collection_id}", response_model=CollectionResponse)
 async def get_collection(
     collection_id: str,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Koleksiyon detaylarını getirir"""
     collection = await collection_service.get_collection(collection_id)
@@ -70,7 +70,7 @@ async def get_collection(
 async def update_collection(
     collection_id: str,
     collection_update: CollectionUpdate,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Koleksiyonu günceller"""
     updated_collection = await collection_service.update_collection(
@@ -86,7 +86,7 @@ async def update_collection(
 @router.delete("/{collection_id}")
 async def delete_collection(
     collection_id: str,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Koleksiyonu siler"""
     await collection_service.delete_collection(
@@ -99,7 +99,7 @@ async def delete_collection(
 async def add_content_to_collection(
     collection_id: str,
     content_id: str,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Koleksiyona içerik ekler"""
     await collection_service.add_content_to_collection(
@@ -114,7 +114,7 @@ async def add_content_to_collection(
 async def remove_content_from_collection(
     collection_id: str,
     content_id: str,
-    current_user: UserInDB = Depends(auth_service.get_current_active_user),
+    current_user: UserInDB = Depends(auth_service.get_current_user),
 ):
     """Koleksiyondan içerik çıkarır"""
     await collection_service.remove_content_from_collection(
