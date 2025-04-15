@@ -27,7 +27,7 @@ class Settings:
     # JWT Ayarları
     JWT_SECRET_KEY: str = env.get("JWT_SECRET_KEY", "your-secret-key")
     JWT_ALGORITHM: str = env.get("JWT_ALGORITHM", "HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(env.get("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(env.get("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(env.get("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
     # Güvenlik Ayarları

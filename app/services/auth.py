@@ -35,7 +35,6 @@ class AuthService:
                 "email": user["email"],
                 "name": user.get("name", ""),
                 "hashed_password": user["hashed_password"],
-                "is_active": user.get("is_active", True),
                 "created_at": user.get("created_at", datetime.utcnow()),
                 "updated_at": user.get("updated_at", datetime.utcnow()),
             }
@@ -95,25 +94,24 @@ class AuthService:
         if not authorization.startswith("Bearer "):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication scheme"
+                detail="Invalid authentication scheme",
             )
-        
+
         token = authorization.replace("Bearer ", "")
         try:
             user = await self.get_current_user(token)
             return UserResponse(
-                    _id=user.id,
-                    email=user.email,
-                    name=user.name,
-                    created_at=user.created_at,
-                    updated_at=user.updated_at
-                )
+                _id=user.id,
+                email=user.email,
+                name=user.name,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+            )
         except HTTPException:
             raise
         except Exception:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
 
     async def register_user(self, user_data: dict) -> AuthResponse:
@@ -152,9 +150,9 @@ class AuthService:
                 email=user_dict["email"],
                 name=user_dict["name"],
                 created_at=user_dict["created_at"],
-                updated_at=user_dict["updated_at"]
+                updated_at=user_dict["updated_at"],
             ),
-            access_token=access_token
+            access_token=access_token,
         )
 
     async def login_user(self, username: str, password: str) -> AuthResponse:
@@ -178,11 +176,10 @@ class AuthService:
                 _id=user.id,
                 email=user.email,
                 name=user.name,
-                is_active=user.is_active,
                 created_at=user.created_at,
-                updated_at=user.updated_at
+                updated_at=user.updated_at,
             ),
-            access_token=access_token
+            access_token=access_token,
         )
 
     async def refresh_token(self, authorization: str) -> AuthResponse:
@@ -190,13 +187,13 @@ class AuthService:
         if not authorization.startswith("Bearer "):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication scheme"
+                detail="Invalid authentication scheme",
             )
-        
+
         token = authorization.replace("Bearer ", "")
         try:
             user = await self.get_current_user(token)
-            
+
             # Yeni token oluştur
             new_token = self.create_access_token(
                 data={"sub": user.email},
@@ -209,14 +206,13 @@ class AuthService:
                     email=user.email,
                     name=user.name,
                     created_at=user.created_at,
-                    updated_at=user.updated_at
+                    updated_at=user.updated_at,
                 ),
-                access_token=new_token
+                access_token=new_token,
             )
         except HTTPException:
             raise
         except Exception:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
