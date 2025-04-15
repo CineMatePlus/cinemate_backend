@@ -36,6 +36,15 @@ class ContentInDB(ContentBase):
         json_encoders = {datetime: lambda v: v.isoformat()}
 
 
+class ContentListResponse(BaseModel):
+    id: str = Field(..., alias="_id")
+    title: str
+    year: int
+    genres: List[str]
+    num_likes: int
+    average_rating: float
+
+
 class ContentResponse(ContentBase):
     id: str = Field(..., alias="_id")
     average_rating: float

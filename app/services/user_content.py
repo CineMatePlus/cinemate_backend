@@ -282,20 +282,41 @@ class UserContentService:
     ) -> List[UserContentResponse]:
         """Kullanıcının izleme geçmişini getirir"""
         try:
-            user_contents = (
-                await self.db.user_contents.find(
-                    {"user_id": user_id, "is_watched": True}
-                )
-                .sort("last_interacted_at", -1)
-                .skip(skip)
-                .limit(limit)
-                .to_list(length=limit)
+            pipeline = [
+                {"$match": {"user_id": user_id, "is_watched": True}},
+                {"$addFields": {"content_id_obj": {"$toObjectId": "$content_id"}}},
+                {
+                    "$lookup": {
+                        "from": "contents",
+                        "localField": "content_id_obj",
+                        "foreignField": "_id",
+                        "as": "content",
+                    }
+                },
+                {"$unwind": {"path": "$content", "preserveNullAndEmptyArrays": True}},
+                {
+                    "$project": {
+                        "_id": {"$toString": "$_id"},
+                        "user_id": 1,
+                        "content_id": 1,
+                        "is_liked": 1,
+                        "is_watched": 1,
+                        "in_watchlist": 1,
+                        "rated": 1,
+                        "last_interacted_at": 1,
+                        "content": {"title": 1, "num_likes": 1, "year": 1},
+                    }
+                },
+                {"$sort": {"last_interacted_at": -1}},
+                {"$skip": skip},
+                {"$limit": limit},
+            ]
+
+            user_contents = await self.db.user_contents.aggregate(pipeline).to_list(
+                length=limit
             )
 
-            return [
-                UserContentResponse(**{**uc, "_id": str(uc["_id"])})
-                for uc in user_contents
-            ]
+            return [UserContentResponse(**uc) for uc in user_contents]
         except Exception as e:
             self._handle_exception(e)
 
@@ -304,20 +325,41 @@ class UserContentService:
     ) -> List[UserContentResponse]:
         """Kullanıcının izleme listesini getirir"""
         try:
-            user_contents = (
-                await self.db.user_contents.find(
-                    {"user_id": user_id, "in_watchlist": True}
-                )
-                .sort("last_interacted_at", -1)
-                .skip(skip)
-                .limit(limit)
-                .to_list(length=limit)
+            pipeline = [
+                {"$match": {"user_id": user_id, "in_watchlist": True}},
+                {"$addFields": {"content_id_obj": {"$toObjectId": "$content_id"}}},
+                {
+                    "$lookup": {
+                        "from": "contents",
+                        "localField": "content_id_obj",
+                        "foreignField": "_id",
+                        "as": "content",
+                    }
+                },
+                {"$unwind": {"path": "$content", "preserveNullAndEmptyArrays": True}},
+                {
+                    "$project": {
+                        "_id": {"$toString": "$_id"},
+                        "user_id": 1,
+                        "content_id": 1,
+                        "is_liked": 1,
+                        "is_watched": 1,
+                        "in_watchlist": 1,
+                        "rated": 1,
+                        "last_interacted_at": 1,
+                        "content": {"title": 1, "num_likes": 1, "year": 1},
+                    }
+                },
+                {"$sort": {"last_interacted_at": -1}},
+                {"$skip": skip},
+                {"$limit": limit},
+            ]
+
+            user_contents = await self.db.user_contents.aggregate(pipeline).to_list(
+                length=limit
             )
 
-            return [
-                UserContentResponse(**{**uc, "_id": str(uc["_id"])})
-                for uc in user_contents
-            ]
+            return [UserContentResponse(**uc) for uc in user_contents]
         except Exception as e:
             self._handle_exception(e)
 
@@ -326,17 +368,40 @@ class UserContentService:
     ) -> List[UserContentResponse]:
         """Kullanıcının beğendiği içerikleri getirir"""
         try:
-            user_contents = (
-                await self.db.user_contents.find({"user_id": user_id, "is_liked": True})
-                .sort("last_interacted_at", -1)
-                .skip(skip)
-                .limit(limit)
-                .to_list(length=limit)
+            pipeline = [
+                {"$match": {"user_id": user_id, "is_liked": True}},
+                {"$addFields": {"content_id_obj": {"$toObjectId": "$content_id"}}},
+                {
+                    "$lookup": {
+                        "from": "contents",
+                        "localField": "content_id_obj",
+                        "foreignField": "_id",
+                        "as": "content",
+                    }
+                },
+                {"$unwind": {"path": "$content", "preserveNullAndEmptyArrays": True}},
+                {
+                    "$project": {
+                        "_id": {"$toString": "$_id"},
+                        "user_id": 1,
+                        "content_id": 1,
+                        "is_liked": 1,
+                        "is_watched": 1,
+                        "in_watchlist": 1,
+                        "rated": 1,
+                        "last_interacted_at": 1,
+                        "content": {"title": 1, "num_likes": 1, "year": 1},
+                    }
+                },
+                {"$sort": {"last_interacted_at": -1}},
+                {"$skip": skip},
+                {"$limit": limit},
+            ]
+
+            user_contents = await self.db.user_contents.aggregate(pipeline).to_list(
+                length=limit
             )
 
-            return [
-                UserContentResponse(**{**uc, "_id": str(uc["_id"])})
-                for uc in user_contents
-            ]
+            return [UserContentResponse(**uc) for uc in user_contents]
         except Exception as e:
             self._handle_exception(e)

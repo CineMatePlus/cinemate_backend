@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict, Any
 from datetime import datetime
 
 
@@ -35,6 +35,7 @@ class UserContentInDB(UserContentBase):
 class UserContentResponse(UserContentBase):
     id: str = Field(..., alias="_id")
     last_interacted_at: datetime
+    content: Optional[Dict[str, Any]] = None
 
     class Config:
         allow_population_by_field_name = True

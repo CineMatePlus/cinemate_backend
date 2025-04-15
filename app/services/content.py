@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.models.content import (
     ContentCreate,
     ContentUpdate,
-    ContentInDB,
+    ContentListResponse,
     ContentResponse,
 )
 from app.db.mongodb import get_database
@@ -46,7 +46,7 @@ class ContentService:
         limit: int = 10,
         genre: Optional[str] = None,
         year: Optional[int] = None,
-    ) -> List[ContentResponse]:
+    ) -> List[ContentListResponse]:
         """İçerikleri listeler ve filtreler"""
         try:
             query = {}
@@ -55,15 +55,24 @@ class ContentService:
             if year:
                 query["year"] = year
 
-            contents = (
-                await self.db.contents.find(query)
-                .skip(skip)
-                .limit(limit)
-                .to_list(length=limit)
-            )
-            # ObjectId'leri string'e çevir
-            contents = [{**content, "_id": str(content["_id"])} for content in contents]
-            return [ContentResponse(**content) for content in contents]
+            pipeline = [
+                {"$match": query},
+                {
+                    "$project": {
+                        "_id": {"$toString": "$_id"},
+                        "title": 1,
+                        "year": 1,
+                        "genres": 1,
+                        "num_likes": 1,
+                        "average_rating": 1,
+                    }
+                },
+                {"$skip": skip},
+                {"$limit": limit},
+            ]
+
+            contents = await self.db.contents.aggregate(pipeline).to_list(length=limit)
+            return [ContentListResponse(**content) for content in contents]
         except Exception as e:
             self._handle_exception(e)
 
@@ -146,21 +155,29 @@ class ContentService:
 
     async def search_contents(
         self, query: str, skip: int = 0, limit: int = 10
-    ) -> List[ContentResponse]:
+    ) -> List[ContentListResponse]:
         """İçeriklerde arama yapar"""
         try:
-            contents = (
-                await self.db.contents.find(
-                    {"$text": {"$search": query}}, {"score": {"$meta": "textScore"}}
-                )
-                .sort([("score", {"$meta": "textScore"})])
-                .skip(skip)
-                .limit(limit)
-                .to_list(length=limit)
-            )
+            pipeline = [
+                {"$match": {"$text": {"$search": query}}},
+                {"$addFields": {"score": {"$meta": "textScore"}}},
+                {
+                    "$project": {
+                        "_id": {"$toString": "$_id"},
+                        "title": 1,
+                        "year": 1,
+                        "genres": 1,
+                        "num_likes": 1,
+                        "average_rating": 1,
+                        "score": 1,
+                    }
+                },
+                {"$sort": {"score": -1}},
+                {"$skip": skip},
+                {"$limit": limit},
+            ]
 
-            # ObjectId'leri string'e çevir
-            contents = [{**content, "_id": str(content["_id"])} for content in contents]
-            return [ContentResponse(**content) for content in contents]
+            contents = await self.db.contents.aggregate(pipeline).to_list(length=limit)
+            return [ContentListResponse(**content) for content in contents]
         except Exception as e:
             self._handle_exception(e)

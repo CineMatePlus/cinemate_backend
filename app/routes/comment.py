@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Header
 from typing import List
 from app.models.comment import (
     CommentResponse,
@@ -20,11 +20,12 @@ auth_service = AuthService()
 async def create_comment(
     content_id: str,
     comment: CommentCreate,
-    current_user: UserInDB = Depends(auth_service.get_current_user),
+    authorization: str = Header(..., description="Bearer token"),
 ):
     """İçeriğe yorum ekler"""
+    user = await auth_service.get_user_from_token(authorization)
     return await comment_service.create_comment(
-        content_id=content_id, comment=comment, user_id=current_user.id
+        content_id=content_id, comment=comment, user_id=str(user.id)
     )
 
 

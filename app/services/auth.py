@@ -89,7 +89,7 @@ class AuthService:
             raise credentials_exception
         return user
 
-    async def get_user_from_token(self, authorization: str) -> AuthResponse:
+    async def get_user_from_token(self, authorization: str) -> UserResponse:
         """Authorization header'ından kullanıcı bilgilerini getir"""
         if not authorization.startswith("Bearer "):
             raise HTTPException(
