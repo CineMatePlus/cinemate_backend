@@ -46,6 +46,7 @@ class ContentService:
         limit: int = 10,
         genre: Optional[str] = None,
         year: Optional[int] = None,
+        type: Optional[bool] = None,
     ) -> List[ContentListResponse]:
         """İçerikleri listeler ve filtreler"""
         try:
@@ -54,6 +55,8 @@ class ContentService:
                 query["genres"] = genre
             if year:
                 query["year"] = year
+            if type is not None:
+                query["type"] = type
 
             pipeline = [
                 {"$match": query},
@@ -65,6 +68,7 @@ class ContentService:
                         "genres": 1,
                         "num_likes": 1,
                         "average_rating": 1,
+                        "type": 1,
                     }
                 },
                 {"$skip": skip},
@@ -154,12 +158,16 @@ class ContentService:
             self._handle_exception(e)
 
     async def search_contents(
-        self, query: str, skip: int = 0, limit: int = 10
+        self, query: str, skip: int = 0, limit: int = 10, type: Optional[bool] = None
     ) -> List[ContentListResponse]:
         """İçeriklerde arama yapar"""
         try:
+            match_query = {"$text": {"$search": query}}
+            if type is not None:
+                match_query["type"] = type
+                
             pipeline = [
-                {"$match": {"$text": {"$search": query}}},
+                {"$match": match_query},
                 {"$addFields": {"score": {"$meta": "textScore"}}},
                 {
                     "$project": {
@@ -169,6 +177,7 @@ class ContentService:
                         "genres": 1,
                         "num_likes": 1,
                         "average_rating": 1,
+                        "type": 1,
                         "score": 1,
                     }
                 },

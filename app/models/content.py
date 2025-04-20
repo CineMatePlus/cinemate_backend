@@ -8,6 +8,8 @@ class ContentBase(BaseModel):
     description: str
     genres: List[str]
     year: int
+    type: bool = Field(..., description="True: Dizi, False: Film")
+    image_url: Optional[str] = None
 
 
 class ContentCreate(ContentBase):
@@ -19,6 +21,7 @@ class ContentUpdate(BaseModel):
     description: Optional[str] = None
     genres: Optional[List[str]] = None
     year: Optional[int] = None
+    image_url: Optional[str] = None
 
 
 class ContentInDB(ContentBase):
@@ -43,6 +46,8 @@ class ContentListResponse(BaseModel):
     genres: List[str]
     num_likes: int
     average_rating: float
+    type: bool
+    image_url: Optional[str] = None
 
 
 class ContentResponse(ContentBase):

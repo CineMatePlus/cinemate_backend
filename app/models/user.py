@@ -6,12 +6,14 @@ from datetime import datetime
 class UserBase(BaseModel):
     email: EmailStr
     name: str
+    avatar_url: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     name: Optional[str] = None
     password: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 
 class UserInDB(UserBase):
