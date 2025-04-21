@@ -6,7 +6,6 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.models.content import (
     ContentCreate,
     ContentUpdate,
-    ContentListResponse,
     ContentResponse,
 )
 from app.db.mongodb import get_database
@@ -47,7 +46,7 @@ class ContentService:
         genre: Optional[str] = None,
         year: Optional[int] = None,
         type: Optional[bool] = None,
-    ) -> List[ContentListResponse]:
+    ) -> List[ContentResponse]:
         """İçerikleri listeler ve filtreler"""
         try:
             query = {}
@@ -64,11 +63,18 @@ class ContentService:
                     "$project": {
                         "_id": {"$toString": "$_id"},
                         "title": 1,
-                        "year": 1,
+                        "description": 1,
                         "genres": 1,
-                        "num_likes": 1,
-                        "average_rating": 1,
+                        "year": 1,
                         "type": 1,
+                        "image_url": 1,
+                        "average_rating": 1,
+                        "num_likes": 1,
+                        "num_watches": 1,
+                        "num_ratings": 1,
+                        "num_comments": 1,
+                        "created_at": 1,
+                        "updated_at": 1
                     }
                 },
                 {"$skip": skip},
@@ -76,7 +82,7 @@ class ContentService:
             ]
 
             contents = await self.db.contents.aggregate(pipeline).to_list(length=limit)
-            return [ContentListResponse(**content) for content in contents]
+            return [ContentResponse(**content) for content in contents]
         except Exception as e:
             self._handle_exception(e)
 
@@ -159,7 +165,7 @@ class ContentService:
 
     async def search_contents(
         self, query: str, skip: int = 0, limit: int = 10, type: Optional[bool] = None
-    ) -> List[ContentListResponse]:
+    ) -> List[ContentResponse]:
         """İçeriklerde arama yapar"""
         try:
             match_query = {"$text": {"$search": query}}
@@ -173,11 +179,18 @@ class ContentService:
                     "$project": {
                         "_id": {"$toString": "$_id"},
                         "title": 1,
-                        "year": 1,
+                        "description": 1,
                         "genres": 1,
-                        "num_likes": 1,
-                        "average_rating": 1,
+                        "year": 1,
                         "type": 1,
+                        "image_url": 1,
+                        "average_rating": 1,
+                        "num_likes": 1,
+                        "num_watches": 1,
+                        "num_ratings": 1,
+                        "num_comments": 1,
+                        "created_at": 1,
+                        "updated_at": 1,
                         "score": 1,
                     }
                 },
@@ -187,6 +200,6 @@ class ContentService:
             ]
 
             contents = await self.db.contents.aggregate(pipeline).to_list(length=limit)
-            return [ContentListResponse(**content) for content in contents]
+            return [ContentResponse(**content) for content in contents]
         except Exception as e:
             self._handle_exception(e)
