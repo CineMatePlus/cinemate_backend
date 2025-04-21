@@ -45,22 +45,24 @@ async def get_comments(
 async def update_comment(
     comment_id: str,
     comment_update: CommentUpdate,
-    current_user: UserInDB = Depends(auth_service.get_current_user),
+    authorization: str = Header(..., description="Bearer token"),
 ):
     """Yorumu günceller"""
+    user = await auth_service.get_user_from_token(authorization)
     return await comment_service.update_comment(
-        comment_id=comment_id, comment_update=comment_update, user_id=current_user.id
+        comment_id=comment_id, comment_update=comment_update, user_id=str(user.id)
     )
 
 
 @router.delete("/{comment_id}")
 async def delete_comment(
     comment_id: str,
-    current_user: UserInDB = Depends(auth_service.get_current_user),
+    authorization: str = Header(..., description="Bearer token"),
 ):
     """Yorumu siler"""
+    user = await auth_service.get_user_from_token(authorization)
     return await comment_service.delete_comment(
-        comment_id=comment_id, user_id=current_user.id
+        comment_id=comment_id, user_id=str(user.id)
     )
 
 
@@ -68,9 +70,10 @@ async def delete_comment(
 async def get_user_comments(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
-    current_user: UserInDB = Depends(auth_service.get_current_user),
+    authorization: str = Header(..., description="Bearer token"),
 ):
     """Kullanıcının kendi yorumlarını getirir"""
+    user = await auth_service.get_user_from_token(authorization)
     return await comment_service.get_user_comments(
-        user_id=current_user.id, skip=skip, limit=limit
+        user_id=str(user.id), skip=skip, limit=limit
     )

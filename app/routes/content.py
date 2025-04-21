@@ -16,7 +16,7 @@ content_service = ContentService()
 auth_service = AuthService()
 
 
-@router.get("/", response_model=List[ContentResponse])
+@router.get("", response_model=List[ContentResponse])
 async def list_contents(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
@@ -69,7 +69,7 @@ async def delete_content(
     return await content_service.delete_content(content_id=content_id)
 
 
-@router.get("/search/", response_model=List[ContentResponse])
+@router.get("/search", response_model=List[ContentResponse])
 async def search_contents(
     query: str = Query(..., min_length=1),
     skip: int = Query(0, ge=0),
