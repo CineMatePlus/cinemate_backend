@@ -10,6 +10,7 @@ async def init_db():
     # Kullanıcı indeksleri
     await db.users.create_index("email", unique=True)
     await db.users.create_index("username", unique=True, sparse=True)
+    await db.users.create_index("gender")
 
     # İçerik indeksleri
     await db.contents.create_index("title")

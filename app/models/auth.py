@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from app.models.user import UserResponse
+from app.models.user import UserResponse, Gender
 
 
 class Token(BaseModel):
@@ -21,6 +21,7 @@ class RegisterRequest(BaseModel):
     email: str
     name: str
     password: str
+    gender: Gender = Gender.OTHER
 
 
 class LoginRequest(BaseModel):

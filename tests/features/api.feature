@@ -14,7 +14,8 @@ Feature: User API Tests
       {
         "email": "testuser@example.com",
         "name": "Test User",
-        "password": "testpassword123"
+        "password": "testpassword123",
+        "gender": 0
       }
       """
     Then the response status code should be 200

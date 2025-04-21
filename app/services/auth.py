@@ -35,6 +35,7 @@ class AuthService:
                 "email": user["email"],
                 "name": user.get("name", ""),
                 "avatar_url": user.get("avatar_url"),
+                "gender": user.get("gender", 2),  # Varsayılan olarak OTHER (2)
                 "hashed_password": user["hashed_password"],
                 "created_at": user.get("created_at", datetime.utcnow()),
                 "updated_at": user.get("updated_at", datetime.utcnow()),
@@ -106,6 +107,7 @@ class AuthService:
                 email=user.email,
                 name=user.name,
                 avatar_url=user.avatar_url,
+                gender=user.gender,
                 created_at=user.created_at,
                 updated_at=user.updated_at,
             )
@@ -132,6 +134,7 @@ class AuthService:
             "email": user_data["email"],
             "name": user_data["name"],
             "avatar_url": user_data.get("avatar_url"),
+            "gender": user_data.get("gender", 2),  # Varsayılan olarak OTHER (2)
             "hashed_password": hashed_password,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -153,6 +156,7 @@ class AuthService:
                 email=user_dict["email"],
                 name=user_dict["name"],
                 avatar_url=user_dict.get("avatar_url"),
+                gender=user_dict.get("gender", 2),
                 created_at=user_dict["created_at"],
                 updated_at=user_dict["updated_at"],
             ),
@@ -181,6 +185,7 @@ class AuthService:
                 email=user.email,
                 name=user.name,
                 avatar_url=user.avatar_url,
+                gender=user.gender,
                 created_at=user.created_at,
                 updated_at=user.updated_at,
             ),
@@ -211,6 +216,7 @@ class AuthService:
                     email=user.email,
                     name=user.name,
                     avatar_url=user.avatar_url,
+                    gender=user.gender,
                     created_at=user.created_at,
                     updated_at=user.updated_at,
                 ),
