@@ -30,6 +30,17 @@ async def list_contents(
     )
 
 
+@router.get("/search", response_model=List[ContentResponse])
+async def search_contents(
+    query: str = Query(..., min_length=1),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    type: Optional[bool] = None,
+):
+    """İçeriklerde arama yapar"""
+    return await content_service.search_contents(query=query, skip=skip, limit=limit, type=type)
+
+
 @router.get("/{content_id}", response_model=ContentResponse)
 async def get_content(content_id: str):
     """Belirli bir içeriğin detaylarını getirir"""
@@ -67,14 +78,3 @@ async def delete_content(
     """İçeriği siler"""
     await auth_service.get_user_from_token(authorization)
     return await content_service.delete_content(content_id=content_id)
-
-
-@router.get("/search", response_model=List[ContentResponse])
-async def search_contents(
-    query: str = Query(..., min_length=1),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
-    type: Optional[bool] = None,
-):
-    """İçeriklerde arama yapar"""
-    return await content_service.search_contents(query=query, skip=skip, limit=limit, type=type)
