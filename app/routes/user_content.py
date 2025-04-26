@@ -1,15 +1,27 @@
-from fastapi import APIRouter, Depends, Query, Header
+from fastapi import APIRouter, Query, Header
 from typing import List
 from app.models.user_content import UserContentResponse
+from app.models.content import ContentResponse
 from app.services.user_content import UserContentService
 from app.services.auth import AuthService
-from app.models.user import UserInDB
 
 router = APIRouter(tags=["user-contents"])
 
 # Servis örneği
 user_content_service = UserContentService()
 auth_service = AuthService()
+
+
+@router.get("/{content_id}/status", response_model=UserContentResponse)
+async def get_user_content_status(
+    content_id: str,
+    authorization: str = Header(..., description="Bearer token"),
+):
+    """Kullanıcının belirli bir içerik ile ilgili durumunu getirir"""
+    user = await auth_service.get_user_from_token(authorization)
+    return await user_content_service.get_user_content_status(
+        content_id=content_id, user_id=str(user.id)
+    )
 
 
 @router.post("/{content_id}/like", response_model=UserContentResponse)
@@ -61,7 +73,7 @@ async def rate_content(
     )
 
 
-@router.get("/watch-history", response_model=List[UserContentResponse])
+@router.get("/watch-history", response_model=List[ContentResponse])
 async def get_watch_history(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
@@ -74,7 +86,7 @@ async def get_watch_history(
     )
 
 
-@router.get("/watchlist", response_model=List[UserContentResponse])
+@router.get("/watchlist", response_model=List[ContentResponse])
 async def get_watchlist(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
@@ -87,7 +99,7 @@ async def get_watchlist(
     )
 
 
-@router.get("/liked", response_model=List[UserContentResponse])
+@router.get("/liked", response_model=List[ContentResponse])
 async def get_liked_contents(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),

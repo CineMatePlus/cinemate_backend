@@ -4,11 +4,10 @@ from fastapi import HTTPException, status
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.models.user_content import (
-    UserContentCreate,
-    UserContentUpdate,
     UserContentInDB,
     UserContentResponse,
 )
+from app.models.content import ContentResponse
 from app.db.mongodb import get_database
 
 
@@ -279,7 +278,7 @@ class UserContentService:
 
     async def get_watch_history(
         self, user_id: str, skip: int = 0, limit: int = 10
-    ) -> List[UserContentResponse]:
+    ) -> List[ContentResponse]:
         """Kullanıcının izleme geçmişini getirir"""
         try:
             pipeline = [
@@ -290,39 +289,36 @@ class UserContentService:
                         "from": "contents",
                         "localField": "content_id_obj",
                         "foreignField": "_id",
-                        "as": "content",
+                        "as": "content"
                     }
                 },
-                {"$unwind": {"path": "$content", "preserveNullAndEmptyArrays": True}},
+                {"$unwind": {"path": "$content", "preserveNullAndEmptyArrays": False}},
                 {
-                    "$project": {
-                        "_id": {"$toString": "$_id"},
-                        "user_id": 1,
-                        "content_id": 1,
-                        "is_liked": 1,
-                        "is_watched": 1,
-                        "in_watchlist": 1,
-                        "rated": 1,
-                        "last_interacted_at": 1,
-                        "content": {"title": 1, "num_likes": 1, "year": 1},
+                    "$replaceRoot": { 
+                        "newRoot": {
+                            "$mergeObjects": [
+                                "$content", 
+                                { "_id": { "$toString": "$content._id" } }
+                            ]
+                        }
                     }
                 },
-                {"$sort": {"last_interacted_at": -1}},
+                {"$sort": {"title": 1}},
                 {"$skip": skip},
                 {"$limit": limit},
             ]
 
-            user_contents = await self.db.user_contents.aggregate(pipeline).to_list(
+            contents = await self.db.user_contents.aggregate(pipeline).to_list(
                 length=limit
             )
 
-            return [UserContentResponse(**uc) for uc in user_contents]
+            return [ContentResponse(**content) for content in contents]
         except Exception as e:
             self._handle_exception(e)
 
     async def get_watchlist(
         self, user_id: str, skip: int = 0, limit: int = 10
-    ) -> List[UserContentResponse]:
+    ) -> List[ContentResponse]:
         """Kullanıcının izleme listesini getirir"""
         try:
             pipeline = [
@@ -333,39 +329,36 @@ class UserContentService:
                         "from": "contents",
                         "localField": "content_id_obj",
                         "foreignField": "_id",
-                        "as": "content",
+                        "as": "content"
                     }
                 },
-                {"$unwind": {"path": "$content", "preserveNullAndEmptyArrays": True}},
+                {"$unwind": {"path": "$content", "preserveNullAndEmptyArrays": False}},
                 {
-                    "$project": {
-                        "_id": {"$toString": "$_id"},
-                        "user_id": 1,
-                        "content_id": 1,
-                        "is_liked": 1,
-                        "is_watched": 1,
-                        "in_watchlist": 1,
-                        "rated": 1,
-                        "last_interacted_at": 1,
-                        "content": {"title": 1, "num_likes": 1, "year": 1},
+                    "$replaceRoot": { 
+                        "newRoot": {
+                            "$mergeObjects": [
+                                "$content", 
+                                { "_id": { "$toString": "$content._id" } }
+                            ]
+                        }
                     }
                 },
-                {"$sort": {"last_interacted_at": -1}},
+                {"$sort": {"title": 1}},
                 {"$skip": skip},
                 {"$limit": limit},
             ]
 
-            user_contents = await self.db.user_contents.aggregate(pipeline).to_list(
+            contents = await self.db.user_contents.aggregate(pipeline).to_list(
                 length=limit
             )
 
-            return [UserContentResponse(**uc) for uc in user_contents]
+            return [ContentResponse(**content) for content in contents]
         except Exception as e:
             self._handle_exception(e)
 
     async def get_liked_contents(
         self, user_id: str, skip: int = 0, limit: int = 10
-    ) -> List[UserContentResponse]:
+    ) -> List[ContentResponse]:
         """Kullanıcının beğendiği içerikleri getirir"""
         try:
             pipeline = [
@@ -376,32 +369,72 @@ class UserContentService:
                         "from": "contents",
                         "localField": "content_id_obj",
                         "foreignField": "_id",
-                        "as": "content",
+                        "as": "content"
                     }
                 },
-                {"$unwind": {"path": "$content", "preserveNullAndEmptyArrays": True}},
+                {"$unwind": {"path": "$content", "preserveNullAndEmptyArrays": False}},
                 {
-                    "$project": {
-                        "_id": {"$toString": "$_id"},
-                        "user_id": 1,
-                        "content_id": 1,
-                        "is_liked": 1,
-                        "is_watched": 1,
-                        "in_watchlist": 1,
-                        "rated": 1,
-                        "last_interacted_at": 1,
-                        "content": {"title": 1, "num_likes": 1, "year": 1},
+                    "$replaceRoot": { 
+                        "newRoot": {
+                            "$mergeObjects": [
+                                "$content", 
+                                { "_id": { "$toString": "$content._id" } }
+                            ]
+                        }
                     }
                 },
-                {"$sort": {"last_interacted_at": -1}},
+                {"$sort": {"title": 1}},
                 {"$skip": skip},
                 {"$limit": limit},
             ]
 
-            user_contents = await self.db.user_contents.aggregate(pipeline).to_list(
+            contents = await self.db.user_contents.aggregate(pipeline).to_list(
                 length=limit
             )
 
-            return [UserContentResponse(**uc) for uc in user_contents]
+            return [ContentResponse(**content) for content in contents]
+        except Exception as e:
+            self._handle_exception(e)
+
+    async def get_user_content(
+        self, user_id: str, content_id: str
+    ) -> Optional[UserContentInDB]:
+        """Kullanıcı-İçerik ilişkisini getirir"""
+        try:
+            content_object_id = self._convert_to_object_id(content_id)
+            user_content = await self.db.user_contents.find_one(
+                {"user_id": user_id, "content_id": str(content_object_id)}
+            )
+
+            if not user_content:
+                return None
+
+            user_content["_id"] = str(user_content["_id"])
+            return UserContentInDB(**user_content)
+        except Exception as e:
+            self._handle_exception(e)
+
+    async def get_user_content_status(
+        self, content_id: str, user_id: str
+    ) -> UserContentResponse:
+        """Kullanıcının belirli bir içerik ile ilgili durumunu getirir"""
+        try:
+            content_object_id = self._convert_to_object_id(content_id)
+            content = await self.db.contents.find_one({"_id": content_object_id})
+            if not content:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="İçerik bulunamadı"
+                )
+
+            user_content = await self.get_user_content(user_id, str(content_object_id))
+            if not user_content:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Kullanıcı-İçerik ilişkisi bulunamadı"
+                )
+
+            user_content_dict = user_content.dict()
+            user_content_dict["_id"] = user_content_dict.pop("id")
+            return UserContentResponse(**user_content_dict)
         except Exception as e:
             self._handle_exception(e)

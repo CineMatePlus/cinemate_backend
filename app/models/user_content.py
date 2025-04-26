@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from typing import Optional
 from datetime import datetime
 
 
@@ -32,11 +32,5 @@ class UserContentInDB(UserContentBase):
         json_encoders = {datetime: lambda v: v.isoformat()}
 
 
-class UserContentResponse(UserContentBase):
-    id: str = Field(..., alias="_id")
-    last_interacted_at: datetime
-    content: Optional[Dict[str, Any]] = None
-
-    class Config:
-        allow_population_by_field_name = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
+class UserContentResponse(UserContentInDB):
+    pass
