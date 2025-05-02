@@ -8,7 +8,9 @@ from app.models.comment import (
     CommentUpdate,
     CommentInDB,
     CommentResponse,
+    CommentData,
 )
+from app.models.user import UserResponse
 from app.db.mongodb import get_database
 
 
@@ -39,6 +41,37 @@ class CommentService:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Bir hata oluştu: {str(e)}",
         )
+
+    async def _enrich_comments_with_user_data(self, comments: List[dict]) -> List[CommentResponse]:
+        """Yorumlara kullanıcı bilgisini ekler"""
+        result = []
+        for comment in comments:
+            # Kullanıcı bilgisini getir
+            user_id = comment["user_id"]
+            user = await self.db.users.find_one({"_id": ObjectId(user_id)})
+            
+            if not user:
+                # Kullanıcı bulunamazsa dummy kullanıcı oluştur
+                user = {
+                    "_id": user_id,
+                    "email": "deleted@user.com",
+                    "name": "Silinmiş Kullanıcı",
+                    "avatar_url": None,
+                    "gender": 2,
+                    "created_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow()
+                }
+            
+            # ID'yi string'e çevir
+            user["_id"] = str(user["_id"])
+            
+            # Yanıtı oluştur
+            comment_data = CommentData(**{**comment, "_id": str(comment["_id"])})
+            user_data = UserResponse(**user)
+            
+            result.append(CommentResponse(comment=comment_data, user=user_data))
+        
+        return result
 
     async def create_comment(
         self, content_id: str, comment: CommentCreate, user_id: str
@@ -73,7 +106,10 @@ class CommentService:
                 {"_id": content_object_id}, {"$inc": {"num_comments": 1}}
             )
 
-            return CommentResponse(**comment_dict)
+            # Kullanıcı bilgisiyle birlikte yanıt oluştur
+            comments = [comment_dict]
+            enriched_comments = await self._enrich_comments_with_user_data(comments)
+            return enriched_comments[0]
         except Exception as e:
             self._handle_exception(e)
 
@@ -99,10 +135,8 @@ class CommentService:
                 .to_list(length=limit)
             )
 
-            return [
-                CommentResponse(**{**comment, "_id": str(comment["_id"])})
-                for comment in comments
-            ]
+            # Kullanıcı bilgisiyle yorumları zenginleştir
+            return await self._enrich_comments_with_user_data(comments)
         except Exception as e:
             self._handle_exception(e)
 
@@ -148,9 +182,11 @@ class CommentService:
             updated_comment = await self.db.comments.find_one(
                 {"_id": comment_object_id}
             )
-            return CommentResponse(
-                **{**updated_comment, "_id": str(updated_comment["_id"])}
-            )
+            
+            # Kullanıcı bilgisi ile birlikte yanıt oluştur
+            comments = [updated_comment]
+            enriched_comments = await self._enrich_comments_with_user_data(comments)
+            return enriched_comments[0]
         except Exception as e:
             self._handle_exception(e)
 
@@ -197,9 +233,7 @@ class CommentService:
                 .to_list(length=limit)
             )
 
-            return [
-                CommentResponse(**{**comment, "_id": str(comment["_id"])})
-                for comment in comments
-            ]
+            # Kullanıcı bilgisiyle yorumları zenginleştir
+            return await self._enrich_comments_with_user_data(comments)
         except Exception as e:
             self._handle_exception(e)

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from app.models.user import UserResponse
 
 
 class CommentBase(BaseModel):
@@ -27,7 +28,7 @@ class CommentInDB(CommentBase):
         json_encoders = {datetime: lambda v: v.isoformat()}
 
 
-class CommentResponse(CommentBase):
+class CommentData(CommentBase):
     id: str = Field(..., alias="_id")
     content_id: str
     user_id: str
@@ -37,3 +38,11 @@ class CommentResponse(CommentBase):
     class Config:
         allow_population_by_field_name = True
         json_encoders = {datetime: lambda v: v.isoformat()}
+
+
+class CommentResponse(BaseModel):
+    comment: CommentData
+    user: UserResponse
+
+    class Config:
+        allow_population_by_field_name = True
