@@ -56,9 +56,7 @@ async def get_collection(
 ):
     """Koleksiyon detaylarını getirir"""
     user = await auth_service.get_user_from_token(authorization)
-    collection = await collection_service.get_collection(
-        collection_id=collection_id, user_id=str(user.id)
-    )
+    collection = await collection_service.get_collection(collection_id=collection_id)
     if not collection:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Koleksiyon bulunamadı"
