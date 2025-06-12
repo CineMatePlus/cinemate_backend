@@ -1,0 +1,91 @@
+```mermaid
+flowchart TD
+    %% API Route Endpoints
+    API{"/api/v1"}
+    
+    %% Auth Routes
+    Auth["/auth"]
+    Auth_Register["/register POST"]
+    Auth_Login["/login POST"]
+    Auth_User["/user GET"]
+    
+    %% Content Routes
+    Contents["/contents"]
+    Contents_List["/ GET"]
+    Contents_Search["/search GET"]
+    Contents_Detail["/{content_id} GET"]
+    Contents_Create["/ POST"]
+    Contents_Update["/{content_id} PUT"]
+    Contents_Delete["/{content_id} DELETE"]
+    
+    %% Collection Routes
+    Collections["/collections"]
+    Collections_List["/ GET"]
+    Collections_Detail["/{collection_id} GET"]
+    Collections_Create["/ POST"]
+    Collections_Update["/{collection_id} PUT"]
+    Collections_Delete["/{collection_id} DELETE"]
+    Collections_AddContent["/{collection_id}/contents/{content_id} POST"]
+    Collections_RemoveContent["/{collection_id}/contents/{content_id} DELETE"]
+    
+    %% Comment Routes
+    Comments["/comments"]
+    Comments_List["/ GET"]
+    Comments_Detail["/{comment_id} GET"]
+    Comments_Create["/ POST"]
+    Comments_Update["/{comment_id} PUT"]
+    Comments_Delete["/{comment_id} DELETE"]
+    Comments_ContentList["/content/{content_id} GET"]
+    
+    %% User-Content Routes
+    UserContents["/user-contents"]
+    UserContents_Get["/{content_id} GET"]
+    UserContents_Like["/{content_id}/like PUT"]
+    UserContents_Watch["/{content_id}/watch PUT"]
+    UserContents_Watchlist["/{content_id}/watchlist PUT"]
+    UserContents_Rate["/{content_id}/rate PUT"]
+    
+    %% Main API connections
+    API --> Auth
+    API --> Contents
+    API --> Collections
+    API --> Comments
+    API --> UserContents
+    
+    %% Auth Routes connections
+    Auth --> Auth_Register
+    Auth --> Auth_Login
+    Auth --> Auth_User
+    
+    %% Content Routes connections
+    Contents --> Contents_List
+    Contents --> Contents_Search
+    Contents --> Contents_Detail
+    Contents --> Contents_Create
+    Contents --> Contents_Update
+    Contents --> Contents_Delete
+    
+    %% Collection Routes connections
+    Collections --> Collections_List
+    Collections --> Collections_Detail
+    Collections --> Collections_Create
+    Collections --> Collections_Update
+    Collections --> Collections_Delete
+    Collections --> Collections_AddContent
+    Collections --> Collections_RemoveContent
+    
+    %% Comment Routes connections
+    Comments --> Comments_List
+    Comments --> Comments_Detail
+    Comments --> Comments_Create
+    Comments --> Comments_Update
+    Comments --> Comments_Delete
+    Comments --> Comments_ContentList
+    
+    %% User-Content Routes connections
+    UserContents --> UserContents_Get
+    UserContents --> UserContents_Like
+    UserContents --> UserContents_Watch
+    UserContents --> UserContents_Watchlist
+    UserContents --> UserContents_Rate
+``` 

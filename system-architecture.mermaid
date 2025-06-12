@@ -1,0 +1,34 @@
+```mermaid
+graph TD
+    %% Ana Bileşenler
+    Client[İstemci Uygulaması] --> API[FastAPI]
+    API --> Routes[API Rotaları]
+    Routes --> Services[Servisler]
+    Services --> Models[Modeller]
+    Services --> DB[MongoDB]
+    
+    %% API Rotalar Detay
+    Routes --> AuthRoutes[Auth Routes]
+    Routes --> ContentRoutes[İçerik Routes]
+    Routes --> CollectionRoutes[Koleksiyon Routes]
+    Routes --> CommentRoutes[Yorum Routes]
+    Routes --> UserContentRoutes[Kullanıcı-İçerik Routes]
+    
+    %% Servisler Detay
+    Services --> AuthService[Auth Service]
+    Services --> ContentService[İçerik Service]
+    Services --> CollectionService[Koleksiyon Service]
+    Services --> CommentService[Yorum Service]
+    Services --> UserContentService[Kullanıcı-İçerik Service]
+    
+    %% Modeller Detay
+    Models --> UserModel[Kullanıcı Model]
+    Models --> ContentModel[İçerik Model]
+    Models --> CollectionModel[Koleksiyon Model]
+    Models --> CommentModel[Yorum Model]
+    Models --> UserContentModel[Kullanıcı-İçerik Model]
+    
+    %% Diğer Bileşenler
+    API --> Middleware[CORS Middleware]
+    API --> Config[Konfigürasyon]
+``` 
