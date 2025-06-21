@@ -16,28 +16,28 @@ comment_service = CommentService()
 auth_service = AuthService()
 
 
-@router.post("/{content_id}", response_model=CommentResponse)
+@router.post("/{movie_id}", response_model=CommentResponse)
 async def create_comment(
-    content_id: str,
+    movie_id: str,
     comment: CommentCreate,
     authorization: str = Header(..., description="Bearer token"),
 ):
     """İçeriğe yorum ekler"""
     user = await auth_service.get_user_from_token(authorization)
     return await comment_service.create_comment(
-        content_id=content_id, comment=comment, user_id=str(user.id)
+        movie_id=movie_id, comment=comment, user_id=str(user.id)
     )
 
 
-@router.get("/{content_id}", response_model=List[CommentResponse])
+@router.get("/{movie_id}", response_model=List[CommentResponse])
 async def get_comments(
-    content_id: str,
+    movie_id: str,
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
 ):
     """İçeriğin yorumlarını getirir"""
     return await comment_service.get_comments(
-        content_id=content_id, skip=skip, limit=limit
+        movie_id=movie_id, skip=skip, limit=limit
     )
 
 

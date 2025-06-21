@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Header
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import List, Optional
 from bson import ObjectId
 from app.models.collection import (
     CollectionResponse,
@@ -7,140 +7,110 @@ from app.models.collection import (
     CollectionUpdate,
 )
 from app.services.collection import CollectionService
-from app.services.auth import AuthService
 from app.models.user import UserInDB
+from app.routes.movie import get_current_user_optional
 
 router = APIRouter(tags=["collections"])
 
 # Servis örneği
 collection_service = CollectionService()
-auth_service = AuthService()
 
+# Dependency for required authentication
+async def get_current_user_required(user: Optional[UserInDB] = Depends(get_current_user_optional)):
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
 
-@router.post("/", response_model=CollectionResponse)
+@router.post("", response_model=CollectionResponse, status_code=status.HTTP_201_CREATED)
 async def create_collection(
     collection: CollectionCreate,
-    authorization: str = Header(..., description="Bearer token"),
+    current_user: UserInDB = Depends(get_current_user_required),
 ):
-    """Yeni koleksiyon oluşturur"""
-    user = await auth_service.get_user_from_token(authorization)
     created_collection = await collection_service.create_collection(
-        collection=collection, user_id=str(user.id)
+        collection=collection, user_id=current_user.id
     )
-    return CollectionResponse(
-        **{**created_collection.dict(), "_id": str(created_collection.id)}
-    )
+    # Refetch to populate movies and owner_name
+    return await collection_service.get_collection_by_id(created_collection.id, current_user.id)
 
-
-@router.get("/", response_model=List[CollectionResponse])
-async def get_user_collections(
+@router.get("/me", response_model=List[CollectionResponse])
+async def get_my_collections(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
-    authorization: str = Header(..., description="Bearer token"),
+    current_user: UserInDB = Depends(get_current_user_required),
 ):
-    """Kullanıcının koleksiyonlarını getirir"""
-    user = await auth_service.get_user_from_token(authorization)
-    collections = await collection_service.get_collections(
-        user_id=str(user.id), skip=skip, limit=limit
+    return await collection_service.get_user_collections(
+        user_id=current_user.id, current_user_id=current_user.id, skip=skip, limit=limit
     )
-    return [
-        CollectionResponse(**{**collection.dict(), "_id": str(collection.id)})
-        for collection in collections
-    ]
 
+@router.get("/user/{user_id}", response_model=List[CollectionResponse])
+async def get_user_collections(
+    user_id: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    current_user: Optional[UserInDB] = Depends(get_current_user_optional),
+):
+    current_user_id = current_user.id if current_user else None
+    return await collection_service.get_user_collections(
+        user_id=user_id, current_user_id=current_user_id, skip=skip, limit=limit
+    )
 
 @router.get("/{collection_id}", response_model=CollectionResponse)
 async def get_collection(
     collection_id: str,
-    authorization: str = Header(..., description="Bearer token"),
+    current_user: Optional[UserInDB] = Depends(get_current_user_optional),
 ):
-    """Koleksiyon detaylarını getirir"""
-    user = await auth_service.get_user_from_token(authorization)
-    collection = await collection_service.get_collection(collection_id=collection_id)
-    if not collection:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Koleksiyon bulunamadı"
-        )
-    if collection.user_id != str(user.id) and not collection.is_public:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Bu koleksiyonu görüntüleme yetkiniz yok",
-        )
-    return CollectionResponse(**{**collection.dict(), "_id": str(collection.id)})
-
+    current_user_id = current_user.id if current_user else None
+    return await collection_service.get_collection_by_id(collection_id, current_user_id)
 
 @router.put("/{collection_id}", response_model=CollectionResponse)
 async def update_collection(
     collection_id: str,
     collection_update: CollectionUpdate,
-    authorization: str = Header(..., description="Bearer token"),
+    current_user: UserInDB = Depends(get_current_user_required),
 ):
-    """Koleksiyonu günceller"""
-    user = await auth_service.get_user_from_token(authorization)
-    updated_collection = await collection_service.update_collection(
+    await collection_service.update_collection(
         collection_id=collection_id,
-        collection=collection_update,
-        user_id=str(user.id),
+        collection_update=collection_update,
+        user_id=current_user.id,
     )
-    return CollectionResponse(
-        **{**updated_collection.dict(), "_id": str(updated_collection.id)}
-    )
+    return await collection_service.get_collection_by_id(collection_id, current_user.id)
 
-
-@router.delete("/{collection_id}")
+@router.delete("/{collection_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_collection(
     collection_id: str,
-    authorization: str = Header(..., description="Bearer token"),
+    current_user: UserInDB = Depends(get_current_user_required),
 ):
-    """Koleksiyonu siler"""
-    user = await auth_service.get_user_from_token(authorization)
     await collection_service.delete_collection(
-        collection_id=collection_id, user_id=str(user.id)
+        collection_id=collection_id, user_id=current_user.id
     )
-    return {"message": "Koleksiyon başarıyla silindi"}
+    return None
 
-
-@router.post("/{collection_id}/contents/{content_id}")
-async def add_content_to_collection(
+@router.post("/{collection_id}/movies/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def add_movie_to_collection(
     collection_id: str,
-    content_id: str,
-    authorization: str = Header(..., description="Bearer token"),
+    movie_id: str,
+    current_user: UserInDB = Depends(get_current_user_required),
 ):
-    """Koleksiyona içerik ekler"""
-    user = await auth_service.get_user_from_token(authorization)
-    await collection_service.add_content_to_collection(
+    await collection_service.add_movie_to_collection(
         collection_id=collection_id,
-        content_id=content_id,
-        user_id=str(user.id),
+        movie_id=movie_id,
+        user_id=current_user.id,
     )
-    return {"message": "İçerik koleksiyona başarıyla eklendi"}
+    return None
 
-
-@router.delete("/{collection_id}/contents/{content_id}")
-async def remove_content_from_collection(
+@router.delete("/{collection_id}/movies/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_movie_from_collection(
     collection_id: str,
-    content_id: str,
-    authorization: str = Header(..., description="Bearer token"),
+    movie_id: str,
+    current_user: UserInDB = Depends(get_current_user_required),
 ):
-    """Koleksiyondan içerik çıkarır"""
-    user = await auth_service.get_user_from_token(authorization)
-    await collection_service.remove_content_from_collection(
+    await collection_service.remove_movie_from_collection(
         collection_id=collection_id,
-        content_id=content_id,
-        user_id=str(user.id),
+        movie_id=movie_id,
+        user_id=current_user.id,
     )
-    return {"message": "İçerik koleksiyondan başarıyla çıkarıldı"}
-
-
-@router.get("/user/{user_id}", response_model=List[CollectionResponse])
-async def get_user_public_collections(
-    user_id: str, skip: int = Query(0, ge=0), limit: int = Query(10, ge=1, le=100)
-):
-    """Kullanıcının public koleksiyonlarını getirir"""
-    collections = await collection_service.get_public_collections(
-        user_id=user_id, skip=skip, limit=limit
-    )
-    return [
-        CollectionResponse(**{**collection.dict(), "_id": str(collection.id)})
-        for collection in collections
-    ]
+    return None

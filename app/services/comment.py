@@ -74,12 +74,12 @@ class CommentService:
         return result
 
     async def create_comment(
-        self, content_id: str, comment: CommentCreate, user_id: str
+        self, movie_id: str, comment: CommentCreate, user_id: str
     ) -> CommentResponse:
         """İçeriğe yorum ekler"""
         try:
             # İçeriğin var olduğunu kontrol et
-            content_object_id = self._convert_to_object_id(content_id)
+            content_object_id = self._convert_to_object_id(movie_id)
             content = await self.db.contents.find_one({"_id": content_object_id})
             if not content:
                 raise HTTPException(
@@ -90,7 +90,7 @@ class CommentService:
             comment_dict = comment.dict()
             comment_dict.update(
                 {
-                    "content_id": str(content_object_id),
+                    "movie_id": str(content_object_id),
                     "user_id": user_id,
                     "created_at": datetime.utcnow(),
                     "updated_at": datetime.utcnow(),
@@ -114,12 +114,12 @@ class CommentService:
             self._handle_exception(e)
 
     async def get_comments(
-        self, content_id: str, skip: int = 0, limit: int = 10
+        self, movie_id: str, skip: int = 0, limit: int = 10
     ) -> List[CommentResponse]:
         """İçeriğin yorumlarını getirir"""
         try:
             # İçeriğin var olduğunu kontrol et
-            content_object_id = self._convert_to_object_id(content_id)
+            content_object_id = self._convert_to_object_id(movie_id)
             content = await self.db.contents.find_one({"_id": content_object_id})
             if not content:
                 raise HTTPException(
@@ -128,7 +128,7 @@ class CommentService:
 
             # Yorumları getir
             comments = (
-                await self.db.comments.find({"content_id": content_id})
+                await self.db.comments.find({"movie_id": movie_id})
                 .sort("created_at", -1)
                 .skip(skip)
                 .limit(limit)
@@ -213,7 +213,7 @@ class CommentService:
 
             # İçerikteki yorum sayısını güncelle
             await self.db.contents.update_one(
-                {"_id": ObjectId(comment["content_id"])}, {"$inc": {"num_comments": -1}}
+                {"_id": ObjectId(comment["movie_id"])}, {"$inc": {"num_comments": -1}}
             )
 
             return {"message": "Yorum başarıyla silindi"}

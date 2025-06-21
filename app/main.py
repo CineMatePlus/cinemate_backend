@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routes import auth, collection, content, comment, user_content
+from app.routes import auth, collection, comment, interaction, movie, user
 from app.db.mongodb import init_db
 
 app = FastAPI(
@@ -27,15 +27,18 @@ app.include_router(
     collection.router, prefix=f"{settings.API_V1_STR}/collections", tags=["collections"]
 )
 app.include_router(
-    content.router, prefix=f"{settings.API_V1_STR}/contents", tags=["contents"]
-)
-app.include_router(
     comment.router, prefix=f"{settings.API_V1_STR}/comments", tags=["comments"]
 )
 app.include_router(
-    user_content.router,
-    prefix=f"{settings.API_V1_STR}/user-contents",
-    tags=["user-contents"],
+    interaction.router,
+    prefix=f"{settings.API_V1_STR}/interactions",
+    tags=["User Interactions"],
+)
+app.include_router(
+    user.router, prefix=f"{settings.API_V1_STR}/users", tags=["Users"]
+)
+app.include_router(
+    movie.router, prefix=f"{settings.API_V1_STR}/movies", tags=["movies"]
 )
 
 

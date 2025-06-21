@@ -14,12 +14,12 @@ async def check_data():
 
     if user_content:
         # İlgili content'i bul
-        content_id = user_content.get("content_id")
-        print("Content ID:", content_id)
-        print("Content ID type:", type(content_id))
+        movie_id = user_content.get("movie_id")
+        print("Content ID:", movie_id)
+        print("Content ID type:", type(movie_id))
 
         # İçeriği farklı şekillerde arayalım
-        content = await db.contents.find_one({"_id": ObjectId(content_id)})
+        content = await db.contents.find_one({"_id": ObjectId(movie_id)})
         print("Content with ObjectId:", content)
 
         # contents koleksiyonundaki tüm kayıtları kontrol edelim

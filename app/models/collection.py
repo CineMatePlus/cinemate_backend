@@ -1,13 +1,15 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
+from app.models.movie import MovieResponse
 
 
 class CollectionBase(BaseModel):
     """Koleksiyon temel modeli"""
 
-    title: str = Field(..., min_length=1, max_length=100)
-    is_public: bool = Field(default=True)
+    name: str
+    description: Optional[str] = None
+    is_public: bool = True
 
 
 class CollectionCreate(CollectionBase):
@@ -16,10 +18,11 @@ class CollectionCreate(CollectionBase):
     pass
 
 
-class CollectionUpdate(CollectionBase):
+class CollectionUpdate(BaseModel):
     """Koleksiyon güncelleme modeli"""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=100)
+    name: Optional[str] = None
+    description: Optional[str] = None
     is_public: Optional[bool] = None
 
 
@@ -28,22 +31,20 @@ class CollectionInDB(CollectionBase):
 
     id: str = Field(..., alias="_id")
     user_id: str
-    content_ids: List[str] = Field(default_factory=list)
+    movie_ids: List[str] = []
     created_at: datetime
     updated_at: datetime
 
     class Config:
         allow_population_by_field_name = True
+        json_encoders = {datetime: lambda v: v.isoformat()}
 
 
-class CollectionResponse(CollectionBase):
+class CollectionResponse(CollectionInDB):
     """Koleksiyon yanıt modeli"""
 
-    id: str = Field(..., alias="_id")
-    user_id: str
-    content_ids: List[str]
-    created_at: datetime
-    updated_at: datetime
+    owner_name: str
+    movies: List[MovieResponse] = []
 
     class Config:
         allow_population_by_field_name = True

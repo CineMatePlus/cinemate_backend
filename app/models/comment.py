@@ -18,7 +18,7 @@ class CommentUpdate(BaseModel):
 
 class CommentInDB(CommentBase):
     id: str = Field(..., alias="_id")
-    content_id: str
+    movie_id: str
     user_id: str
     created_at: datetime
     updated_at: datetime
@@ -30,7 +30,7 @@ class CommentInDB(CommentBase):
 
 class CommentData(CommentBase):
     id: str = Field(..., alias="_id")
-    content_id: str
+    movie_id: str
     user_id: str
     created_at: datetime
     updated_at: datetime

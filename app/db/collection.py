@@ -13,7 +13,7 @@ async def create_collection(
     now = datetime.utcnow()
     collection_data = collection.dict()
     collection_data.update(
-        {"user_id": user_id, "content_ids": [], "created_at": now, "updated_at": now}
+        {"user_id": user_id, "movie_ids": [], "created_at": now, "updated_at": now}
     )
 
     result = await db.collections.insert_one(collection_data)
@@ -66,13 +66,13 @@ async def delete_collection(db: AsyncIOMotorDatabase, collection_id: str) -> boo
 
 
 async def add_content_to_collection(
-    db: AsyncIOMotorDatabase, collection_id: str, content_id: str
+    db: AsyncIOMotorDatabase, collection_id: str, movie_id: str
 ) -> bool:
     """Koleksiyona içerik ekler"""
     result = await db.collections.update_one(
         {"_id": ObjectId(collection_id)},
         {
-            "$addToSet": {"content_ids": content_id},
+            "$addToSet": {"movie_ids": movie_id},
             "$set": {"updated_at": datetime.utcnow()},
         },
     )
@@ -80,13 +80,13 @@ async def add_content_to_collection(
 
 
 async def remove_content_from_collection(
-    db: AsyncIOMotorDatabase, collection_id: str, content_id: str
+    db: AsyncIOMotorDatabase, collection_id: str, movie_id: str
 ) -> bool:
     """Koleksiyondan içerik kaldırır"""
     result = await db.collections.update_one(
         {"_id": ObjectId(collection_id)},
         {
-            "$pull": {"content_ids": content_id},
+            "$pull": {"movie_ids": movie_id},
             "$set": {"updated_at": datetime.utcnow()},
         },
     )
