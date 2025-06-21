@@ -5,6 +5,7 @@ from bson import ObjectId
 
 from app.db.mongodb import get_database
 from app.models.movie import MovieResponse
+from app.services.movie import MovieService
 
 
 class InteractionService:
@@ -41,8 +42,8 @@ class InteractionService:
         counter_field = self._get_counter_field(interaction_type)
 
         interaction_data = {
-            "user_id": user_id,
-            "movie_id": movie_id,
+            "user_id": ObjectId(user_id),
+            "movie_id": ObjectId(movie_id),
             "interaction_type": interaction_type,
         }
 
@@ -72,30 +73,38 @@ class InteractionService:
         """
         A generic method to fetch a user's movie list based on an interaction type.
         """
-        pipeline = [
-            {"$match": {"user_id": user_id, "interaction_type": interaction_type}},
+        # İlk olarak, kullanıcının ilgili etkileşimlerini sayfalayarak bulalım.
+        base_pipeline = [
+            {"$match": {"user_id": ObjectId(user_id), "interaction_type": interaction_type}},
             {"$sort": {"created_at": -1}},
             {"$skip": skip},
             {"$limit": limit},
-            {
-                "$addFields": {
-                    "movie_id_obj": {"$toObjectId": "$movie_id"}
-                }
-            },
+        ]
+
+        # Bu etkileşimlere karşılık gelen film detaylarını çekelim.
+        base_pipeline.extend([
             {
                 "$lookup": {
                     "from": "movies",
-                    "localField": "movie_id_obj",
-                    "foreignField": "_id",
+                    "localField": "movie_id",
+                    "foreignField": "_id",  # Burası _id olmalı
                     "as": "movie_details"
                 }
             },
             {"$unwind": "$movie_details"},
             {"$replaceRoot": {"newRoot": "$movie_details"}},
+        ])
+
+        # Artık elimizde sadece istenen sayfadaki filmler var.
+        # Şimdi bu filmleri MovieService'in kanıtlanmış metoduyla zenginleştirelim.
+        enrichment_pipeline = MovieService._get_user_interaction_pipeline(user_id)
+        
+        # ID'yi string'e çevirme adımını da ekleyelim.
+        final_pipeline = base_pipeline + enrichment_pipeline + [
             {"$addFields": {"_id": {"$toString": "$_id"}}}
         ]
         
-        movies_cursor = self.db.interactions.aggregate(pipeline)
+        movies_cursor = self.db.interactions.aggregate(final_pipeline)
         movies = await movies_cursor.to_list(length=limit)
         return [MovieResponse(**movie) for movie in movies]
 

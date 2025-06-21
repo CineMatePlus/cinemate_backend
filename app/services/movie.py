@@ -51,18 +51,31 @@ class MovieService:
 
     @staticmethod
     def _get_user_interaction_pipeline(user_id: str) -> List[dict]:
+        if not user_id:
+            return [
+                {
+                    "$addFields": {
+                        "is_liked": False,
+                        "is_watched": False,
+                        "is_in_watchlist": False,
+                    }
+                }
+            ]
+
+        user_object_id = ObjectId(user_id)
+
         return [
             {
                 "$lookup": {
                     "from": "interactions",
-                    "let": {"movie_id_str": {"$toString": "$_id"}},
+                    "let": {"movie_id": "$_id"},
                     "pipeline": [
                         {
                             "$match": {
                                 "$expr": {
                                     "$and": [
-                                        {"$eq": ["$movie_id", "$$movie_id_str"]},
-                                        {"$eq": ["$user_id", user_id]},
+                                        {"$eq": ["$movie_id", "$$movie_id"]},
+                                        {"$eq": ["$user_id", user_object_id]},
                                     ]
                                 }
                             }
