@@ -10,6 +10,7 @@ from app.models.collection import (
     CollectionResponse,
 )
 from app.db.mongodb import get_database
+from app.models.movie import MovieResponse
 from app.services.movie import MovieService
 from app.models.pyobjectid import PyObjectId
 
@@ -78,36 +79,12 @@ class CollectionService:
             },
             {"$unwind": "$owner_info"},
             {
-                "$lookup": {
-                    "from": "movies",
-                    "localField": "movie_ids",
-                    "foreignField": "_id",
-                    "as": "movies_full"
-                }
-            },
-            {
-                "$addFields": {
-                    "movies_full": {
-                        "$map": {
-                            "input": "$movies_full",
-                            "as": "movie",
-                            "in": {
-                                "$mergeObjects": [
-                                    "$$movie",
-                                    {"_id": {"$toString": "$$movie._id"}}
-                                ]
-                            }
-                        }
-                    }
-                }
-            },
-            {
                 "$addFields": {
                     "owner_name": "$owner_info.name",
-                    "movies": "$movies_full"
+                    "movie_count": {"$size": "$movie_ids"}
                 }
             },
-            {"$project": {"owner_info": 0, "movies_full": 0}}
+            {"$project": {"owner_info": 0}}
         ]
         
         collections_cursor = self.db.collections.aggregate(pipeline)
@@ -131,36 +108,12 @@ class CollectionService:
             },
             {"$unwind": "$owner_info"},
             {
-                "$lookup": {
-                    "from": "movies",
-                    "localField": "movie_ids",
-                    "foreignField": "_id",
-                    "as": "movies_full"
-                }
-            },
-            {
-                "$addFields": {
-                    "movies_full": {
-                        "$map": {
-                            "input": "$movies_full",
-                            "as": "movie",
-                            "in": {
-                                "$mergeObjects": [
-                                    "$$movie",
-                                    {"_id": {"$toString": "$$movie._id"}}
-                                ]
-                            }
-                        }
-                    }
-                }
-            },
-            {
                 "$addFields": {
                     "owner_name": "$owner_info.name",
-                    "movies": "$movies_full"
+                    "movie_count": {"$size": "$movie_ids"}
                 }
             },
-             {"$project": {"owner_info": 0, "movies_full": 0}}
+             {"$project": {"owner_info": 0}}
         ]
 
         collections_cursor = self.db.collections.aggregate(pipeline)
@@ -230,7 +183,7 @@ class CollectionService:
 
     async def add_movie_to_collection(
         self, collection_id: str, movie_id: str, user_id: str
-    ) -> CollectionResponse:
+    ) -> bool:
         await self._get_collection_and_validate_owner(collection_id, user_id)
         
         movie_obj_id = ObjectId(movie_id)
@@ -243,27 +196,22 @@ class CollectionService:
             {"$addToSet": {"movie_ids": movie_obj_id}}
         )
 
-        if result.modified_count == 0:
-            # Film zaten koleksiyonda olabilir, bu bir hata değil.
-            # Sadece güncel koleksiyonu döndür.
-            pass
-
-        return await self.get_collection_by_id(collection_id, user_id)
+        return result.modified_count > 0
 
     async def remove_movie_from_collection(
         self, collection_id: str, movie_id: str, user_id: str
-    ) -> CollectionResponse:
+    ) -> bool:
         await self._get_collection_and_validate_owner(collection_id, user_id)
 
         result = await self.db.collections.update_one(
             {"_id": ObjectId(collection_id)},
             {"$pull": {"movie_ids": ObjectId(movie_id)}}
         )
-
+        
         if result.modified_count == 0:
             raise HTTPException(status_code=404, detail="Movie not found in this collection")
 
-        return await self.get_collection_by_id(collection_id, user_id)
+        return result.modified_count > 0
 
     async def get_public_collections(
         self, user_id: str, skip: int = 0, limit: int = 10
@@ -284,3 +232,39 @@ class CollectionService:
             ]
         except Exception as e:
             self._handle_exception(e)
+
+    async def get_movies_in_collection(self, collection_id: str, current_user_id: Optional[str], skip: int, limit: int) -> List[MovieResponse]:
+        collection = await self.db.collections.find_one({"_id": ObjectId(collection_id)})
+        
+        if not collection:
+            raise HTTPException(status_code=404, detail="Collection not found")
+        
+        if not collection.get('is_public') and str(collection.get('user_id')) != current_user_id:
+            raise HTTPException(status_code=403, detail="Not authorized to view this collection")
+
+        movie_ids = collection.get("movie_ids", [])
+        
+        paginated_movie_ids = movie_ids[skip : skip + limit]
+
+        if not paginated_movie_ids:
+            return []
+
+        movies_pipeline = [
+            {"$match": {"_id": {"$in": paginated_movie_ids}}},
+            # Gerekirse sıralama ekleyebiliriz, örn: {"$addFields": {"__order": {"$indexOfArray": [paginated_movie_ids, "$_id"]}}}, {"$sort": {"__order": 1}}
+        ]
+        
+        # Film listesini kullanıcı etkileşimleriyle zenginleştirelim
+        if current_user_id:
+            movies_pipeline.extend(MovieService._get_user_interaction_pipeline(current_user_id))
+        
+        movies_pipeline.append({"$addFields": {"_id": {"$toString": "$_id"}}})
+        
+        movies_cursor = self.db.movies.aggregate(movies_pipeline)
+        movies = await movies_cursor.to_list(length=limit)
+        
+        # Orijinal sıralamayı korumak için
+        movies_dict = {movie['_id']: movie for movie in movies}
+        sorted_movies = [MovieResponse(**movies_dict[str(oid)]) for oid in paginated_movie_ids if str(oid) in movies_dict]
+
+        return sorted_movies

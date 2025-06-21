@@ -46,7 +46,7 @@ class CollectionResponse(CollectionInDB):
     """Koleksiyon yanıt modeli"""
 
     owner_name: str
-    movies: List[MovieResponse] = []
+    movie_count: int = 0
 
     class Config:
         allow_population_by_field_name = True
