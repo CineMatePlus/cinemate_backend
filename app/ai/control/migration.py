@@ -150,7 +150,7 @@ def migrate_csv_to_mongodb_optimized():
     csv_file_path = "app/ai/control/first_hundred.csv"
     mongo_uri = "mongodb://localhost:27017/"
     db_name = "tests"
-    collection_name = "movie_embeddings_MiniLM-L6-v2"
+    collection_name = "movie_embeddings"
     chunk_size = 2000  # Arttırıldı
     embedding_batch_size = 64  # GPU memory'ye göre ayarlanabilir
     max_workers = min(4, mp.cpu_count())  # CPU core sayısına göre
@@ -163,7 +163,7 @@ def migrate_csv_to_mongodb_optimized():
 
     # --- Load Embedding Model ---
     print("Embedding modeli yükleniyor...")
-    model = SentenceTransformer("all-MiniLM-L6-v2")
+    model = SentenceTransformer("all-mpnet-base-v2")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device)
     

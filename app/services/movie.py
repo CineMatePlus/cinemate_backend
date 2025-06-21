@@ -1,9 +1,10 @@
 from bson import ObjectId
 from typing import List, Optional
 from app.db.mongodb import get_database
-from app.models.movie import MovieResponse
+from app.models.movie import MovieResponse, MovieInDB
 from app.models.interaction import InteractionInDB
 from fastapi import HTTPException
+from app.services.ai import AIService
 
 db = get_database()
 
@@ -48,6 +49,75 @@ class MovieService:
             raise HTTPException(status_code=404, detail="Movie not found")
         
         return MovieResponse(**movies[0])
+
+    @staticmethod
+    async def search_movies_by_vector(embedding: List[float], user_id: Optional[str] = None) -> List[MovieResponse]:
+        # Note: A vector search index named 'vector_index' must be created on the 'movies' collection in MongoDB Atlas.
+        # The index should be on the 'embedding' field.
+        pipeline = [
+            {
+                "$vectorSearch": {
+                    "index": "vector_index",
+                    "path": "embedding",
+                    "queryVector": embedding,
+                    "numCandidates": 150,
+                    "limit": 10
+                }
+            }
+        ]
+        
+        if user_id:
+            pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
+
+        pipeline.append({"$addFields": {"_id": {"$toString": "$_id"}}})
+        
+        movies_cursor = db.movies.aggregate(pipeline)
+        movies = await movies_cursor.to_list(length=10)
+        return [MovieResponse(**movie) for movie in movies]
+
+    @staticmethod
+    async def get_similar_movies(movie_id: str, user_id: Optional[str] = None) -> List[MovieResponse]:
+        if not ObjectId.is_valid(movie_id):
+            raise HTTPException(status_code=400, detail="Invalid movie ID format")
+
+        target_movie = await db.movies.find_one({"_id": ObjectId(movie_id)})
+        if not target_movie:
+            raise HTTPException(status_code=404, detail="Target movie not found")
+
+        target_movie_model = MovieInDB(**target_movie)
+
+        embedding = target_movie_model.embedding
+        if not embedding:
+            raise HTTPException(status_code=404, detail="Embeddings for the target movie not found.")
+
+        # Note: A vector search index named 'vector_index' must be created on the 'movies' collection in MongoDB Atlas.
+        # The index should be on the 'embedding' field.
+        pipeline = [
+            {
+                "$vectorSearch": {
+                    "index": "vector_index",
+                    "path": "embedding",
+                    "queryVector": embedding,
+                    "numCandidates": 150,
+                    "limit": 11 # 10 similar + the movie itself
+                }
+            },
+            {
+                "$match": {
+                    "_id": {"$ne": ObjectId(movie_id)}
+                }
+            },
+            {"$limit": 10}
+        ]
+        
+        if user_id:
+            pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
+
+        pipeline.append({"$addFields": {"_id": {"$toString": "$_id"}}})
+        
+        movies_cursor = db.movies.aggregate(pipeline)
+        movies = await movies_cursor.to_list(length=10)
+        return [MovieResponse(**movie) for movie in movies]
 
     @staticmethod
     def _get_user_interaction_pipeline(user_id: str) -> List[dict]:

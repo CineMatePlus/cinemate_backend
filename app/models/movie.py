@@ -32,7 +32,7 @@ class MovieBase(BaseModel):
 
 
 class MovieCreate(MovieBase):
-    pass
+    embedding: Optional[List[float]] = None
 
 
 class MovieUpdate(BaseModel):
@@ -59,12 +59,14 @@ class MovieUpdate(BaseModel):
     production_countries: Optional[List[str]] = None
     spoken_languages: Optional[List[str]] = None
     keywords: Optional[List[str]] = None
+    embedding: Optional[List[float]] = None
     num_likes: Optional[int] = None
     num_watches: Optional[int] = None
 
 
 class MovieInDB(MovieBase):
     id: str = Field(..., alias="_id")
+    embedding: Optional[List[float]] = None
 
     class Config:
         allow_population_by_field_name = True

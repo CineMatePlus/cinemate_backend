@@ -4,6 +4,7 @@ from app.models.movie import MovieResponse
 from app.models.user import UserInDB
 from app.services.movie import MovieService
 from app.services.auth import AuthService
+from app.services.ai import AIService
 from jose import JWTError, jwt
 from app.core.config import settings
 
@@ -46,6 +47,16 @@ async def get_movies(
     movies = await MovieService.get_movies(user_id=user_id, skip=skip, limit=limit)
     return movies
 
+@router.get("/search", response_model=List[MovieResponse])
+async def search_movies(
+    query: str,
+    current_user: Optional[UserInDB] = Depends(get_current_user_optional)
+):
+    user_id = current_user.id if current_user else None
+    embedding = AIService.get_embedding_for_text(query)
+    movies = await MovieService.search_movies_by_vector(embedding=embedding, user_id=user_id)
+    return movies
+
 @router.get("/{movie_id}", response_model=MovieResponse)
 async def get_movie(
     movie_id: str,
@@ -53,4 +64,13 @@ async def get_movie(
 ):
     user_id = current_user.id if current_user else None
     movie = await MovieService.get_movie_by_id(movie_id=movie_id, user_id=user_id)
-    return movie 
+    return movie
+
+@router.get("/{movie_id}/similar", response_model=List[MovieResponse])
+async def get_similar_movies(
+    movie_id: str,
+    current_user: Optional[UserInDB] = Depends(get_current_user_optional)
+):
+    user_id = current_user.id if current_user else None
+    similar_movies = await MovieService.get_similar_movies(movie_id=movie_id, user_id=user_id)
+    return similar_movies 
