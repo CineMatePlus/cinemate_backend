@@ -65,7 +65,7 @@ async def delete_collection(db: AsyncIOMotorDatabase, collection_id: str) -> boo
     return result.deleted_count > 0
 
 
-async def add_content_to_collection(
+async def add_movie_to_collection(
     db: AsyncIOMotorDatabase, collection_id: str, movie_id: str
 ) -> bool:
     """Koleksiyona içerik ekler"""
@@ -79,7 +79,7 @@ async def add_content_to_collection(
     return result.modified_count > 0
 
 
-async def remove_content_from_collection(
+async def remove_movie_from_collection(
     db: AsyncIOMotorDatabase, collection_id: str, movie_id: str
 ) -> bool:
     """Koleksiyondan içerik kaldırır"""

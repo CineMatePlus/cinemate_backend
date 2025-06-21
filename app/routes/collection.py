@@ -31,7 +31,7 @@ async def create_collection(
     current_user: UserInDB = Depends(get_current_user_required),
 ):
     created_collection = await collection_service.create_collection(
-        collection=collection, user_id=current_user.id
+        collection_data=collection, user_id=current_user.id
     )
     # Refetch to populate movies and owner_name
     return await collection_service.get_collection_by_id(created_collection.id, current_user.id)

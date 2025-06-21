@@ -79,21 +79,21 @@ class CommentService:
         """İçeriğe yorum ekler"""
         try:
             # İçeriğin var olduğunu kontrol et
-            content_object_id = self._convert_to_object_id(movie_id)
-            content = await self.db.contents.find_one({"_id": content_object_id})
-            if not content:
+            movie_object_id = self._convert_to_object_id(movie_id)
+            movie = await self.db.movies.find_one({"_id": movie_object_id})
+            if not movie:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="İçerik bulunamadı"
                 )
-
+            now = datetime.utcnow()
             # Yorum oluştur
             comment_dict = comment.dict()
             comment_dict.update(
                 {
-                    "movie_id": str(content_object_id),
+                    "movie_id": str(movie_object_id),
                     "user_id": user_id,
-                    "created_at": datetime.utcnow(),
-                    "updated_at": datetime.utcnow(),
+                    "created_at": now,
+                    "updated_at": now,
                 }
             )
 
@@ -102,8 +102,8 @@ class CommentService:
             comment_dict["_id"] = str(result.inserted_id)
 
             # İçerikteki yorum sayısını güncelle
-            await self.db.contents.update_one(
-                {"_id": content_object_id}, {"$inc": {"num_comments": 1}}
+            await self.db.movies.update_one(
+                {"_id": movie_object_id}, {"$inc": {"num_comments": 1}}
             )
 
             # Kullanıcı bilgisiyle birlikte yanıt oluştur
@@ -119,9 +119,9 @@ class CommentService:
         """İçeriğin yorumlarını getirir"""
         try:
             # İçeriğin var olduğunu kontrol et
-            content_object_id = self._convert_to_object_id(movie_id)
-            content = await self.db.contents.find_one({"_id": content_object_id})
-            if not content:
+            movie_object_id = self._convert_to_object_id(movie_id)
+            movie = await self.db.movies.find_one({"_id": movie_object_id})
+            if not movie:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="İçerik bulunamadı"
                 )
@@ -212,7 +212,7 @@ class CommentService:
             await self.db.comments.delete_one({"_id": comment_object_id})
 
             # İçerikteki yorum sayısını güncelle
-            await self.db.contents.update_one(
+            await self.db.movies.update_one(
                 {"_id": ObjectId(comment["movie_id"])}, {"$inc": {"num_comments": -1}}
             )
 

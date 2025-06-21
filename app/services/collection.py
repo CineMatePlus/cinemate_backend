@@ -1,7 +1,6 @@
 from typing import List, Optional
 from datetime import datetime
 from fastapi import HTTPException, status
-from motor.motor_asyncio import AsyncIOMotorDatabase
 from bson import ObjectId
 
 from app.models.collection import (
@@ -12,74 +11,55 @@ from app.models.collection import (
 )
 from app.db.mongodb import get_database
 from app.services.movie import MovieService
+from app.models.pyobjectid import PyObjectId
 
 
 class CollectionService:
     def __init__(self):
         self.db = get_database()
 
-    def _convert_to_object_id(self, id_str: str) -> ObjectId:
-        """String ID'yi ObjectId'ye dönüştürür"""
-        try:
-            return ObjectId(id_str)
-        except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Geçersiz ID formatı: {id_str}",
-            )
-
-    def _handle_exception(self, e: Exception) -> None:
-        """Hata yakalama ve HTTPException fırlatma"""
-        if isinstance(e, HTTPException):
-            raise e
-        if isinstance(e, ValueError):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Geçersiz veri: {str(e)}",
-            )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Bir hata oluştu: {str(e)}",
-        )
-
     async def create_collection(
-        self, collection: CollectionCreate, user_id: str
+        self, collection_data: CollectionCreate, user_id: str
     ) -> CollectionInDB:
         """Yeni bir koleksiyon oluşturur"""
-        try:
-            now = datetime.utcnow()
-            collection_data = collection.dict()
-            collection_data.update(
-                {
-                    "user_id": user_id,
-                    "movie_ids": [],
-                    "created_at": now,
-                    "updated_at": now,
-                }
+        user_object_id = ObjectId(user_id)
+        
+        existing_collection = await self.db.collections.find_one(
+            {"user_id": user_object_id, "name": collection_data.name}
+        )
+        if existing_collection:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This collection name already exists.",
             )
 
-            # Aynı başlıkta koleksiyon var mı kontrol et
-            existing_collection = await self.db.collections.find_one(
-                {"user_id": user_id, "name": collection.name}
-            )
-            if existing_collection:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="This collection name already exists.",
-                )
+        now = datetime.utcnow()
+        db_collection = collection_data.dict()
+        db_collection.update(
+            {
+                "user_id": user_object_id,
+                "movie_ids": [],
+                "created_at": now,
+                "updated_at": now,
+            }
+        )
 
-            result = await self.db.collections.insert_one(collection_data)
-            created_collection = await self.db.collections.find_one(
-                {"_id": result.inserted_id}
-            )
+        result = await self.db.collections.insert_one(db_collection)
+        
+        created_collection = await self.db.collections.find_one(
+            {"_id": result.inserted_id}
+        )
+        
+        if created_collection:
             return CollectionInDB(**created_collection)
-        except Exception as e:
-            self._handle_exception(e)
+        
+        raise HTTPException(status_code=500, detail="Collection could not be created.")
 
     async def get_user_collections(
         self, user_id: str, current_user_id: Optional[str], skip: int = 0, limit: int = 10
     ) -> List[CollectionResponse]:
-        match_stage = {"user_id": user_id}
+        user_object_id = ObjectId(user_id)
+        match_stage = {"user_id": user_object_id}
         if user_id != current_user_id:
             match_stage["is_public"] = True
 
@@ -107,7 +87,22 @@ class CollectionService:
             },
             {
                 "$addFields": {
-                    "id": {"$toString": "$_id"},
+                    "movies_full": {
+                        "$map": {
+                            "input": "$movies_full",
+                            "as": "movie",
+                            "in": {
+                                "$mergeObjects": [
+                                    "$$movie",
+                                    {"_id": {"$toString": "$$movie._id"}}
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "$addFields": {
                     "owner_name": "$owner_info.name",
                     "movies": "$movies_full"
                 }
@@ -122,11 +117,10 @@ class CollectionService:
     async def get_collection_by_id(
         self, collection_id: str, current_user_id: Optional[str]
     ) -> CollectionResponse:
-        if not ObjectId.is_valid(collection_id):
-            raise HTTPException(status_code=400, detail="Invalid collection ID")
+        collection_object_id = ObjectId(collection_id)
 
         pipeline = [
-            {"$match": {"_id": ObjectId(collection_id)}},
+            {"$match": {"_id": collection_object_id}},
             {
                 "$lookup": {
                     "from": "users",
@@ -146,7 +140,22 @@ class CollectionService:
             },
             {
                 "$addFields": {
-                    "id": {"$toString": "$_id"},
+                    "movies_full": {
+                        "$map": {
+                            "input": "$movies_full",
+                            "as": "movie",
+                            "in": {
+                                "$mergeObjects": [
+                                    "$$movie",
+                                    {"_id": {"$toString": "$$movie._id"}}
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "$addFields": {
                     "owner_name": "$owner_info.name",
                     "movies": "$movies_full"
                 }
@@ -162,165 +171,99 @@ class CollectionService:
 
         collection_data = collections[0]
         
-        if not collection_data.get('is_public') and collection_data.get('user_id') != current_user_id:
+        if not collection_data.get('is_public') and str(collection_data.get('user_id')) != current_user_id:
             raise HTTPException(status_code=403, detail="Not authorized to view this collection")
 
         return CollectionResponse(**collection_data)
+    
+    async def _get_collection_and_validate_owner(self, collection_id: str, user_id: str) -> dict:
+        collection_obj_id = ObjectId(collection_id)
+        user_obj_id = ObjectId(user_id)
+
+        collection = await self.db.collections.find_one({"_id": collection_obj_id})
+
+        if not collection:
+            raise HTTPException(status_code=404, detail="Collection not found")
+        
+        if collection["user_id"] != user_obj_id:
+            raise HTTPException(status_code=403, detail="You are not the owner of this collection")
+        
+        return collection
 
     async def update_collection(
         self, collection_id: str, collection_update: CollectionUpdate, user_id: str
-    ) -> Optional[CollectionInDB]:
+    ) -> CollectionResponse:
         """Koleksiyonu günceller"""
-        try:
-            collection_object_id = self._convert_to_object_id(collection_id)
-            user_object_id = self._convert_to_object_id(user_id)
+        await self._get_collection_and_validate_owner(collection_id, user_id)
+        
+        update_data = collection_update.dict(exclude_unset=True)
+        if not update_data:
+             raise HTTPException(status_code=400, detail="No update data provided")
 
-            # Koleksiyonun var olduğunu ve kullanıcıya ait olduğunu kontrol et
-            existing_collection = await self.get_collection_by_id(str(collection_object_id), None)
-            if not existing_collection:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Koleksiyon bulunamadı",
-                )
-            if existing_collection.user_id != str(user_object_id):
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Bu koleksiyonu güncelleme yetkiniz yok",
-                )
+        update_data["updated_at"] = datetime.utcnow()
 
-            update_data = collection_update.dict(exclude_unset=True)
-            update_data["updated_at"] = datetime.utcnow()
-
-            # Başlık değişiyorsa, yeni başlığın benzersiz olduğunu kontrol et
-            if "name" in update_data:
-                existing_name = await self.db.collections.find_one(
-                    {
-                        "user_id": str(user_object_id),
-                        "name": update_data["name"],
-                        "_id": {"$ne": collection_object_id},
-                    }
-                )
-                if existing_name:
-                    raise HTTPException(
-                        status_code=status.HTTP_409_CONFLICT,
-                        detail="This collection name already exists.",
-                    )
-
-            await self.db.collections.update_one(
-                {"_id": collection_object_id}, {"$set": update_data}
+        if "name" in update_data:
+            existing_name = await self.db.collections.find_one(
+                {
+                    "user_id": ObjectId(user_id),
+                    "name": update_data["name"],
+                    "_id": {"$ne": ObjectId(collection_id)},
+                }
             )
+            if existing_name:
+                raise HTTPException(status_code=409, detail="This collection name already exists.")
 
-            updated_collection = await self.db.collections.find_one(
-                {"_id": collection_object_id}
-            )
-            return CollectionInDB(
-                **{**updated_collection, "_id": str(updated_collection["_id"])}
-            )
-        except Exception as e:
-            self._handle_exception(e)
+        await self.db.collections.update_one(
+            {"_id": ObjectId(collection_id)}, {"$set": update_data}
+        )
+
+        return await self.get_collection_by_id(collection_id, user_id)
 
     async def delete_collection(self, collection_id: str, user_id: str) -> bool:
-        """Koleksiyonu siler"""
-        try:
-            collection_object_id = self._convert_to_object_id(collection_id)
-            user_object_id = self._convert_to_object_id(user_id)
-
-            # Koleksiyonun var olduğunu ve kullanıcıya ait olduğunu kontrol et
-            collection = await self.get_collection_by_id(str(collection_object_id), None)
-            if not collection:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Koleksiyon bulunamadı",
-                )
-            if collection.user_id != str(user_object_id):
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Bu koleksiyonu silme yetkiniz yok",
-                )
-
-            result = await self.db.collections.delete_one({"_id": collection_object_id})
-            return result.deleted_count > 0
-        except Exception as e:
-            self._handle_exception(e)
+        await self._get_collection_and_validate_owner(collection_id, user_id)
+        
+        result = await self.db.collections.delete_one({"_id": ObjectId(collection_id)})
+        
+        if result.deleted_count == 1:
+            return True
+        return False
 
     async def add_movie_to_collection(
         self, collection_id: str, movie_id: str, user_id: str
-    ) -> bool:
-        """Koleksiyona içerik ekler"""
-        try:
-            collection_object_id = self._convert_to_object_id(collection_id)
-            content_object_id = self._convert_to_object_id(movie_id)
-            user_object_id = self._convert_to_object_id(user_id)
+    ) -> CollectionResponse:
+        await self._get_collection_and_validate_owner(collection_id, user_id)
+        
+        movie_obj_id = ObjectId(movie_id)
+        movie = await self.db.movies.find_one({"_id": movie_obj_id})
+        if not movie:
+            raise HTTPException(status_code=404, detail="Movie not found")
 
-            # Koleksiyonun var olduğunu ve kullanıcıya ait olduğunu kontrol et
-            collection = await self.get_collection_by_id(str(collection_object_id), None)
-            if not collection:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Koleksiyon bulunamadı",
-                )
-            if collection.user_id != str(user_object_id):
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Bu koleksiyonu düzenleme yetkiniz yok",
-                )
+        result = await self.db.collections.update_one(
+            {"_id": ObjectId(collection_id)},
+            {"$addToSet": {"movie_ids": movie_obj_id}}
+        )
 
-            # İçeriğin var olduğunu kontrol et
-            movie = await self.db.movies.find_one({"_id": content_object_id})
-            if not movie:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="İçerik bulunamadı"
-                )
+        if result.modified_count == 0:
+            # Film zaten koleksiyonda olabilir, bu bir hata değil.
+            # Sadece güncel koleksiyonu döndür.
+            pass
 
-            # İçeriği koleksiyona ekle
-            if str(content_object_id) not in collection.movie_ids:
-                result = await self.db.collections.update_one(
-                    {"_id": collection_object_id},
-                    {
-                        "$addToSet": {"movie_ids": str(content_object_id)},
-                        "$set": {"updated_at": datetime.utcnow()},
-                    },
-                )
-                return result.modified_count > 0
-            return False
-        except Exception as e:
-            self._handle_exception(e)
+        return await self.get_collection_by_id(collection_id, user_id)
 
     async def remove_movie_from_collection(
         self, collection_id: str, movie_id: str, user_id: str
-    ) -> bool:
-        """Koleksiyondan içerik çıkarır"""
-        try:
-            collection_object_id = self._convert_to_object_id(collection_id)
-            content_object_id = self._convert_to_object_id(movie_id)
-            user_object_id = self._convert_to_object_id(user_id)
+    ) -> CollectionResponse:
+        await self._get_collection_and_validate_owner(collection_id, user_id)
 
-            # Koleksiyonun var olduğunu ve kullanıcıya ait olduğunu kontrol et
-            collection = await self.get_collection_by_id(str(collection_object_id), None)
-            if not collection:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Koleksiyon bulunamadı",
-                )
-            if collection.user_id != str(user_object_id):
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Bu koleksiyonu düzenleme yetkiniz yok",
-                )
+        result = await self.db.collections.update_one(
+            {"_id": ObjectId(collection_id)},
+            {"$pull": {"movie_ids": ObjectId(movie_id)}}
+        )
 
-            # İçeriği koleksiyondan çıkar
-            if str(content_object_id) in collection.movie_ids:
-                result = await self.db.collections.update_one(
-                    {"_id": collection_object_id},
-                    {
-                        "$pull": {"movie_ids": str(content_object_id)},
-                        "$set": {"updated_at": datetime.utcnow()},
-                    },
-                )
-                return result.modified_count > 0
-            return False
-        except Exception as e:
-            self._handle_exception(e)
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Movie not found in this collection")
+
+        return await self.get_collection_by_id(collection_id, user_id)
 
     async def get_public_collections(
         self, user_id: str, skip: int = 0, limit: int = 10

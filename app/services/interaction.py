@@ -77,14 +77,14 @@ class InteractionService:
         base_pipeline = [
             {"$match": {"user_id": ObjectId(user_id), "interaction_type": interaction_type}},
             {"$sort": {"created_at": -1}},
-            {"$skip": skip},
-            {"$limit": limit},
-        ]
+                {"$skip": skip},
+                {"$limit": limit},
+            ]
 
         # Bu etkileşimlere karşılık gelen film detaylarını çekelim.
         base_pipeline.extend([
-            {
-                "$lookup": {
+                {
+                    "$lookup": {
                     "from": "movies",
                     "localField": "movie_id",
                     "foreignField": "_id",  # Burası _id olmalı
