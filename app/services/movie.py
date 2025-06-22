@@ -64,6 +64,11 @@ class MovieService:
                     "numCandidates": 150,
                     "limit": 10
                 }
+            },
+            {
+                "$addFields": {
+                    "similarity_score": { "$meta": "vectorSearchScore" }
+                }
             }
         ]
         
@@ -74,6 +79,13 @@ class MovieService:
         
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=10)
+
+        print("\n--- Text Search Results ---")
+        for movie in movies:
+            score = movie.get('similarity_score', 'N/A')
+            print(f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}")
+        print("---------------------------\n")
+
         return [MovieResponse(**movie) for movie in movies]
 
     @staticmethod
@@ -107,6 +119,11 @@ class MovieService:
                 }
             },
             {
+                "$addFields": {
+                    "similarity_score": { "$meta": "vectorSearchScore" }
+                }
+            },
+            {
                 "$match": {
                     "_id": {"$nin": object_ids}
                 }
@@ -121,6 +138,13 @@ class MovieService:
         
         similar_movies_cursor = db.movies.aggregate(pipeline)
         similar_movies = await similar_movies_cursor.to_list(length=limit)
+        
+        print("\n--- List Recommendation Results ---")
+        for movie in similar_movies:
+            score = movie.get('similarity_score', 'N/A')
+            print(f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}")
+        print("-----------------------------------\n")
+
         return [MovieResponse(**movie) for movie in similar_movies]
 
     @staticmethod
@@ -132,6 +156,9 @@ class MovieService:
         if not target_movie:
             raise HTTPException(status_code=404, detail="Target movie not found")
 
+        # Convert the _id from ObjectId to string before passing to Pydantic model
+        target_movie["_id"] = str(target_movie["_id"])
+        
         target_movie_model = MovieInDB(**target_movie)
 
         embedding = target_movie_model.embedding
@@ -151,6 +178,11 @@ class MovieService:
                 }
             },
             {
+                "$addFields": {
+                    "similarity_score": { "$meta": "vectorSearchScore" }
+                }
+            },
+            {
                 "$match": {
                     "_id": {"$ne": ObjectId(movie_id)}
                 }
@@ -165,6 +197,13 @@ class MovieService:
         
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=10)
+
+        print(f"\n--- Similar Movies for '{target_movie.get('title')}' ---")
+        for movie in movies:
+            score = movie.get('similarity_score', 'N/A')
+            print(f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}")
+        print("------------------------------------------\n")
+
         return [MovieResponse(**movie) for movie in movies]
 
     @staticmethod

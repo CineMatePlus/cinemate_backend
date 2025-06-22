@@ -78,6 +78,11 @@ class UserService:
                 }
             },
             {
+                "$addFields": {
+                    "similarity_score": { "$meta": "vectorSearchScore" }
+                }
+            },
+            {
                 "$match": {
                     "_id": {"$ne": user_object_id} # Exclude the user from their own similar list
                 }
@@ -88,5 +93,11 @@ class UserService:
 
         similar_users_cursor = self.db.users.aggregate(pipeline)
         similar_users = await similar_users_cursor.to_list(length=limit)
+
+        print("\n--- Similar Users Found ---")
+        for user in similar_users:
+            score = user.get('similarity_score', 'N/A')
+            print(f"User: {user.get('name', 'Unknown')}, Similarity Score: {score:.4f}")
+        print("---------------------------\n")
 
         return [UserResponse(**u) for u in similar_users] 
