@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from datetime import datetime
 from enum import IntEnum
 
@@ -35,6 +35,7 @@ class UserUpdate(BaseModel):
 class UserInDB(UserBase):
     id: str = Field(alias="_id")
     hashed_password: str
+    embedding: Optional[List[float]] = None
     created_at: datetime
     updated_at: datetime
 

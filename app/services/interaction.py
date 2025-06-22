@@ -6,11 +6,13 @@ from bson import ObjectId
 from app.db.mongodb import get_database
 from app.models.movie import MovieResponse
 from app.services.movie import MovieService
+from app.services.user import UserService
 
 
 class InteractionService:
     def __init__(self):
         self.db = get_database()
+        self.user_service = UserService()
 
     async def _validate_movie_exists(self, movie_id: str):
         if not ObjectId.is_valid(movie_id):
@@ -56,6 +58,9 @@ class InteractionService:
                 await self.db.movies.update_one(
                     {"_id": ObjectId(movie_id)}, {"$inc": {counter_field: -1}}
                 )
+            # If a like was removed, update the user's embedding
+            if interaction_type == "like":
+                await self.user_service.update_user_embedding(user_id)
             return False  # Removed
         else:
             # Interaction does not exist, so add it
@@ -65,6 +70,9 @@ class InteractionService:
                 await self.db.movies.update_one(
                     {"_id": ObjectId(movie_id)}, {"$inc": {counter_field: 1}}
                 )
+            # If a like was added, update the user's embedding
+            if interaction_type == "like":
+                await self.user_service.update_user_embedding(user_id)
             return True  # Added
 
     async def get_movie_ids_by_interaction(

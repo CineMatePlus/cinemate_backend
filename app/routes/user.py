@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, Query
 from typing import List, Literal
 from app.services.interaction import InteractionService
 from app.services.movie import MovieService
-from app.models.user import UserInDB
+from app.services.user import UserService
+from app.models.user import UserInDB, UserResponse
 from app.models.movie import MovieResponse
 from app.routes.collection import get_current_user_required
 
@@ -11,6 +12,7 @@ router = APIRouter(
 )
 
 interaction_service = InteractionService()
+user_service = UserService()
 
 @router.get("/me/liked-movies", response_model=List[MovieResponse])
 async def get_my_liked_movies(
@@ -38,6 +40,16 @@ async def get_my_watched_history(
 ):
     """Returns the current user's watched history."""
     return await interaction_service.get_watched_history(current_user.id, skip, limit)
+
+@router.get("/me/similar-users", response_model=List[UserResponse])
+async def get_my_similar_users(
+    current_user: UserInDB = Depends(get_current_user_required),
+    limit: int = Query(10, ge=1, le=50)
+):
+    """
+    Returns a list of users with similar tastes to the current user.
+    """
+    return await user_service.get_similar_users(user_id=str(current_user.id), limit=limit)
 
 @router.get("/me/recommendations", response_model=List[MovieResponse])
 async def get_my_recommendations(
