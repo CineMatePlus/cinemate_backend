@@ -213,6 +213,15 @@ class CollectionService:
 
         return result.modified_count > 0
 
+    async def get_movie_ids_in_collection(self, collection_id: str, user_id: str) -> List[str]:
+        """
+        Fetches all movie IDs from a specific collection for a given user.
+        Validates that the user is the owner of the collection.
+        """
+        collection = await self._get_collection_and_validate_owner(collection_id, user_id)
+        movie_ids = collection.get("movie_ids", [])
+        return [str(movie_id) for movie_id in movie_ids]
+
     async def get_public_collections(
         self, user_id: str, skip: int = 0, limit: int = 10
     ) -> List[CollectionInDB]:

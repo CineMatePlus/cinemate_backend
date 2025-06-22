@@ -8,6 +8,7 @@ from app.models.collection import (
 )
 from app.models.movie import MovieResponse
 from app.services.collection import CollectionService
+from app.services.movie import MovieService
 from app.models.user import UserInDB
 from app.routes.movie import get_current_user_optional
 
@@ -79,6 +80,36 @@ async def get_movies_in_collection(
     return await collection_service.get_movies_in_collection(
         collection_id, current_user_id, skip, limit
     )
+
+@router.get("/{collection_id}/recommendations", response_model=List[MovieResponse])
+async def get_collection_recommendations(
+    collection_id: str,
+    limit: int = Query(10, ge=1, le=50),
+    current_user: UserInDB = Depends(get_current_user_required),
+):
+    """
+    Returns movie recommendations based on the movies in a specific collection.
+    The user must be the owner of the collection.
+    """
+    user_id = str(current_user.id)
+    
+    # 1. Get the list of movie IDs from the specified collection
+    movie_ids = await collection_service.get_movie_ids_in_collection(
+        collection_id=collection_id,
+        user_id=user_id
+    )
+
+    if not movie_ids:
+        return []
+
+    # 2. Get recommendations based on the collected movie IDs
+    recommendations = await MovieService.get_recommendations_from_movie_ids(
+        movie_ids=movie_ids,
+        user_id=user_id,
+        limit=limit
+    )
+
+    return recommendations
 
 @router.put("/{collection_id}", response_model=CollectionResponse)
 async def update_collection(
