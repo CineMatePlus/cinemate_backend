@@ -5,6 +5,7 @@ from app.models.movie import MovieResponse, MovieInDB
 from app.models.interaction import InteractionInDB
 from fastapi import HTTPException
 from app.services.ai import AIService
+import numpy as np
 
 db = get_database()
 
@@ -74,6 +75,53 @@ class MovieService:
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=10)
         return [MovieResponse(**movie) for movie in movies]
+
+    @staticmethod
+    async def get_recommendations_from_movie_ids(movie_ids: List[str], user_id: Optional[str] = None, limit: int = 10) -> List[MovieResponse]:
+        if not movie_ids:
+            return []
+
+        object_ids = [ObjectId(id) for id in movie_ids if ObjectId.is_valid(id)]
+        
+        movies_cursor = db.movies.find(
+            {"_id": {"$in": object_ids}, "embedding": {"$exists": True}},
+            {"embedding": 1}
+        )
+        embeddings = [movie["embedding"] for movie in await movies_cursor.to_list(length=None)]
+
+        if not embeddings:
+            return []
+
+        # Calculate the average embedding vector
+        average_embedding = np.mean(embeddings, axis=0).tolist()
+
+        # Find movies similar to the average embedding, excluding the ones already in the list
+        pipeline = [
+            {
+                "$vectorSearch": {
+                    "index": "vector_index",
+                    "path": "embedding",
+                    "queryVector": average_embedding,
+                    "numCandidates": 150,
+                    "limit": limit + len(object_ids) 
+                }
+            },
+            {
+                "$match": {
+                    "_id": {"$nin": object_ids}
+                }
+            },
+            {"$limit": limit}
+        ]
+
+        if user_id:
+            pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
+
+        pipeline.append({"$addFields": {"_id": {"$toString": "$_id"}}})
+        
+        similar_movies_cursor = db.movies.aggregate(pipeline)
+        similar_movies = await similar_movies_cursor.to_list(length=limit)
+        return [MovieResponse(**movie) for movie in similar_movies]
 
     @staticmethod
     async def get_similar_movies(movie_id: str, user_id: Optional[str] = None) -> List[MovieResponse]:

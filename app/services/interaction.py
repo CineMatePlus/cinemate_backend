@@ -67,6 +67,19 @@ class InteractionService:
                 )
             return True  # Added
 
+    async def get_movie_ids_by_interaction(
+        self, user_id: str, interaction_type: str
+    ) -> List[str]:
+        """
+        Fetches a list of movie IDs for a user based on interaction type.
+        """
+        interactions_cursor = self.db.interactions.find(
+            {"user_id": ObjectId(user_id), "interaction_type": interaction_type},
+            {"movie_id": 1}
+        )
+        movie_ids = await interactions_cursor.to_list(length=None)
+        return [str(item["movie_id"]) for item in movie_ids]
+
     async def _get_movie_list_by_interaction(
         self, user_id: str, interaction_type: str, skip: int, limit: int
     ) -> List[MovieResponse]:
