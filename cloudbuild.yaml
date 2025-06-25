@@ -7,6 +7,6 @@ steps:
         pip install poetry
         poetry config virtualenvs.create false
         poetry install
-        poetry run uvicorn app.main:app --host 0.0.0.0 --port 8080
+        poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 timeout: 900s
