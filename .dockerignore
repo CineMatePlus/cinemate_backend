@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Poetry
+.venv
+poetry.lock
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Tests
+tests/
+
+# Project files and documentation
+project/
+*.md
+*.mermaid
+*.csv
+run.bat
+
+# IDE / Editor specific
+.vscode/
+.idea/ 
