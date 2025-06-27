@@ -1,0 +1,32 @@
+graph TD
+    %% Mobile Client (Flutter)
+    subgraph Mobile_Client_Flutter ["Mobile Client (Flutter)"]
+        MobileUI["UI (Screens & Widgets)"]
+        MobileState["State Management (Riverpod)"]
+        MobileServices["Business Logic (Services)"]
+        MobileAPIClient["API Client (Dio)"]
+
+        MobileUI --> MobileState
+        MobileState --> MobileServices
+        MobileServices --> MobileAPIClient
+    end
+
+    %% Backend Server (FastAPI)
+    subgraph Backend_Server_FastAPI ["Backend Server (FastAPI)"]
+        APIEndpoints["API Routes (Endpoints)"]
+        BackendServices["Business Logic (Services)"]
+        BackendModels["Data Models (Pydantic)"]
+        DBAL["Database Access (Motor)"]
+
+        APIEndpoints --> BackendServices
+        BackendServices --> BackendModels
+        BackendServices --> DBAL
+    end
+
+    %% Database (MongoDB)
+    subgraph Database_MongoDB ["Database (MongoDB)"]
+        MongoDB["MongoDB"]
+    end
+
+    MobileAPIClient -- "HTTP/S Request" --> APIEndpoints
+    DBAL -- "Queries" --> MongoDB

@@ -10,7 +10,7 @@ output_csv_path = os.path.join(script_dir, 'first_hundred.csv')
 try:
     with open(input_csv_path, 'r', encoding='utf-8') as f_in:
         # Orijinal dosyanın ilk 101 satırını oku (başlık + 100 veri)
-        lines = [next(f_in) for _ in range(1000)]
+        lines = [next(f_in) for _ in range(10000)]
     
     with open(output_csv_path, 'w', encoding='utf-8') as f_out:
         # Okunan satırları yeni dosyaya yaz

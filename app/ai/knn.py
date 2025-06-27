@@ -2,10 +2,56 @@ import numpy as np
 from pymongo import MongoClient
 from sklearn.metrics.pairwise import cosine_similarity
 from bson import ObjectId
+from sentence_transformers import SentenceTransformer
 
 client = MongoClient("mongodb://localhost:27017")
 db = client["tests"]
-collection = db["movie_embeddings"]  # veya hangi koleksiyon ismini verdiysen
+collection = db["movie_embeddings_bge_m3"]  # NOT: Kullandığınız embedding modeline göre doğru koleksiyonu seçtiğinizden emin olun.
+
+# AI Modelini Yükle
+print("Embedding modeli yükleniyor...")
+# Film embedding'lerini oluşturmak için kullanılan model ile aynı olmalı.
+# app/services/ai.py dosyasında 'all-MiniLM-L6-v2' kullanılıyor.
+model = SentenceTransformer('BAAI/bge-m3')
+print("Model başarıyla yüklendi.")
+
+
+def get_similar_movies_by_prompt(prompt: str, top_k: int = 10):
+    """
+    Verilen bir metin istemine dayalı olarak benzer filmleri bulur.
+    """
+    # 1. Kullanıcının girdiği metin için anlamsal bir vektör oluştur
+    prompt_embedding = model.encode(prompt, normalize_embeddings=True)
+    prompt_vector = np.array(prompt_embedding).reshape(1, -1)
+
+    # 2. Veritabanındaki tüm filmleri ve vektörlerini al
+    all_docs = list(collection.find({}, {"_id": 1, "title": 1, "embedding": 1}))
+
+    if not all_docs:
+        print("Veritabanında hiç film bulunamadı.")
+        return []
+
+    ids = [str(doc["_id"]) for doc in all_docs]
+    titles = [doc.get("title", "Başlıksız") for doc in all_docs]
+    embeddings = np.array([doc["embedding"] for doc in all_docs])
+
+    # 3. Kosinüs benzerliğini hesapla
+    similarities = cosine_similarity(prompt_vector, embeddings)[0]
+
+    # 4. En benzer K sonucu sırala
+    similar_indices = similarities.argsort()[::-1][:top_k]
+
+    # 5. Sonuçları hazırla
+    results = []
+    for i in similar_indices:
+        results.append({
+            "id": ids[i],
+            "title": titles[i],
+            "similarity": float(similarities[i])
+        })
+
+    return results
+
 
 def get_similar_movies(target_id, top_k=10):
     # 1. Tüm içerikleri ve embedding'lerini al
@@ -49,11 +95,26 @@ def get_similar_movies(target_id, top_k=10):
 
 
 if __name__ == "__main__":
-    # Bu kısım, dosya doğrudan çalıştırıldığında (import edildiğinde değil) çalışır.
-    # Mevcut 46-49. satırları buraya taşıyarak veya kopyalayarak kullanabilirsiniz.
-    # Orijinal 46-49. satırları bu bloğun dışından silmeyi unutmayın.
-    result = get_similar_movies(ObjectId("6857369c0119eb4aa22f5339"))
-    for r in result:
-        print(f"{r['title']}: {r['similarity']:.4f}")
+    while True:
+        # Kullanıcıdan bir metin al (çıkış seçeneği ile birlikte)
+        user_prompt = input("\n🎬 Benzer filmleri bulmak için bir konu girin (çıkmak için 'q', 'quit' veya 'exit' yazın): ")
+
+        # Çıkış komutlarını kontrol et
+        if user_prompt.lower() in ['q', 'quit', 'exit']:
+            print("👋 Görüşmek üzere!")
+            break
+
+        if user_prompt and user_prompt.strip():
+            # Tavsiyeleri al ve yazdır
+            recommendations = get_similar_movies_by_prompt(user_prompt, top_k=10)
+            
+            if recommendations:
+                print(f"\n✨ '{user_prompt}' için en iyi {len(recommendations)} öneri:")
+                for r in recommendations:
+                    print(f"  - {r['title']} (Benzerlik: {r['similarity']:.4f})")
+            else:
+                print("Bu konuyla eşleşen bir film bulunamadı.")
+        else:
+            print("❌ Geçerli bir metin girilmedi. Lütfen tekrar deneyin.")
 
 

@@ -3,7 +3,7 @@ from typing import List, Literal
 from app.services.interaction import InteractionService
 from app.services.movie import MovieService
 from app.services.user import UserService
-from app.models.user import UserInDB, UserResponse
+from app.models.user import UserInDB, UserResponse, SimilarUserResponse
 from app.models.movie import MovieResponse
 from app.routes.collection import get_current_user_required
 
@@ -41,7 +41,7 @@ async def get_my_watched_history(
     """Returns the current user's watched history."""
     return await interaction_service.get_watched_history(current_user.id, skip, limit)
 
-@router.get("/me/similar-users", response_model=List[UserResponse])
+@router.get("/me/similar-users", response_model=List[SimilarUserResponse])
 async def get_my_similar_users(
     current_user: UserInDB = Depends(get_current_user_required),
     limit: int = Query(10, ge=1, le=50)
@@ -78,4 +78,13 @@ async def get_my_recommendations(
         limit=limit
     )
 
-    return recommendations 
+    return recommendations
+
+@router.get("/me/stats")
+async def get_my_stats(
+    current_user: UserInDB = Depends(get_current_user_required)
+):
+    """
+    Returns the number of items in the current user's liked, watched, and watchlist.
+    """
+    return await interaction_service.get_user_interaction_counts(current_user.id) 

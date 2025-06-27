@@ -58,3 +58,7 @@ class UserResponse(UserBase):
             datetime: lambda v: v.isoformat(),
             IntEnum: lambda v: int(v)
         }
+
+
+class SimilarUserResponse(UserResponse):
+    similarity: float

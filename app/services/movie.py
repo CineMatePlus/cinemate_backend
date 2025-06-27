@@ -22,7 +22,50 @@ class MovieService:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
         
         # Convert _id to string for Pydantic compatibility
-        pipeline.append({"$addFields": {"_id": {"$toString": "$_id"}}})
+        pipeline.extend([
+            {"$addFields": {"_id": {"$toString": "$_id"}}},
+            {"$addFields": {"title": {"$toString": "$title"}}},
+            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+            {"$addFields": {
+                "production_companies": {
+                    "$map": {
+                        "input": "$production_companies",
+                        "as": "pc",
+                        "in": {"$toString": "$$pc"}
+                    }
+                }
+            }}
+        ])
+
+        movies_cursor = db.movies.aggregate(pipeline)
+        movies = await movies_cursor.to_list(length=limit)
+        return [MovieResponse(**movie) for movie in movies]
+
+    @staticmethod
+    async def get_movies_by_genre(genre: str, user_id: Optional[str] = None, skip: int = 0, limit: int = 20) -> List[MovieResponse]:
+        pipeline = [
+            {"$match": {"genres": genre}},
+            {"$skip": skip},
+            {"$limit": limit}
+        ]
+
+        if user_id:
+            pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
+        
+        pipeline.extend([
+            {"$addFields": {"_id": {"$toString": "$_id"}}},
+            {"$addFields": {"title": {"$toString": "$title"}}},
+            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+            {"$addFields": {
+                "production_companies": {
+                    "$map": {
+                        "input": "$production_companies",
+                        "as": "pc",
+                        "in": {"$toString": "$$pc"}
+                    }
+                }
+            }}
+        ])
 
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=limit)
@@ -41,7 +84,20 @@ class MovieService:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
         
         # Convert _id to string for Pydantic compatibility
-        pipeline.append({"$addFields": {"_id": {"$toString": "$_id"}}})
+        pipeline.extend([
+            {"$addFields": {"_id": {"$toString": "$_id"}}},
+            {"$addFields": {"title": {"$toString": "$title"}}},
+            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+            {"$addFields": {
+                "production_companies": {
+                    "$map": {
+                        "input": "$production_companies",
+                        "as": "pc",
+                        "in": {"$toString": "$$pc"}
+                    }
+                }
+            }}
+        ])
 
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=1)
@@ -52,7 +108,7 @@ class MovieService:
         return MovieResponse(**movies[0])
 
     @staticmethod
-    async def search_movies_by_vector(embedding: List[float], user_id: Optional[str] = None) -> List[MovieResponse]:
+    async def search_movies_by_vector(embedding: List[float], user_id: Optional[str] = None, limit: int = 10) -> List[MovieResponse]:
         # Note: A vector search index named 'vector_index' must be created on the 'movies' collection in MongoDB Atlas.
         # The index should be on the 'embedding' field.
         pipeline = [
@@ -62,7 +118,7 @@ class MovieService:
                     "path": "embedding",
                     "queryVector": embedding,
                     "numCandidates": 150,
-                    "limit": 10
+                    "limit": limit
                 }
             },
             {
@@ -75,10 +131,23 @@ class MovieService:
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        pipeline.append({"$addFields": {"_id": {"$toString": "$_id"}}})
+        pipeline.extend([
+            {"$addFields": {"_id": {"$toString": "$_id"}}},
+            {"$addFields": {"title": {"$toString": "$title"}}},
+            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+            {"$addFields": {
+                "production_companies": {
+                    "$map": {
+                        "input": "$production_companies",
+                        "as": "pc",
+                        "in": {"$toString": "$$pc"}
+                    }
+                }
+            }}
+        ])
         
         movies_cursor = db.movies.aggregate(pipeline)
-        movies = await movies_cursor.to_list(length=10)
+        movies = await movies_cursor.to_list(length=limit)
 
         print("\n--- Text Search Results ---")
         for movie in movies:
@@ -134,7 +203,20 @@ class MovieService:
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        pipeline.append({"$addFields": {"_id": {"$toString": "$_id"}}})
+        pipeline.extend([
+            {"$addFields": {"_id": {"$toString": "$_id"}}},
+            {"$addFields": {"title": {"$toString": "$title"}}},
+            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+            {"$addFields": {
+                "production_companies": {
+                    "$map": {
+                        "input": "$production_companies",
+                        "as": "pc",
+                        "in": {"$toString": "$$pc"}
+                    }
+                }
+            }}
+        ])
         
         similar_movies_cursor = db.movies.aggregate(pipeline)
         similar_movies = await similar_movies_cursor.to_list(length=limit)
@@ -193,7 +275,20 @@ class MovieService:
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        pipeline.append({"$addFields": {"_id": {"$toString": "$_id"}}})
+        pipeline.extend([
+            {"$addFields": {"_id": {"$toString": "$_id"}}},
+            {"$addFields": {"title": {"$toString": "$title"}}},
+            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+            {"$addFields": {
+                "production_companies": {
+                    "$map": {
+                        "input": "$production_companies",
+                        "as": "pc",
+                        "in": {"$toString": "$$pc"}
+                    }
+                }
+            }}
+        ])
         
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=10)

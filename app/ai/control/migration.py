@@ -60,26 +60,69 @@ def process_text_columns_vectorized(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_embedding_texts_batch(df: pd.DataFrame) -> List[str]:
-    """Embedding için tüm metinleri batch olarak hazırlar"""
+    """
+    Embedding için tüm metinleri batch olarak hazırlar.
+    Daha iyi öneriler için önemli alanlara (türler, anahtar kelimeler) ağırlık verir
+    ve ek film özelliklerini dahil eder.
+    """
     texts = []
-    
+
+    # Ağırlıklandırma: Bir alanın metinde kaç kez görüneceği.
+    weights = {
+        "title": 1,
+        "original_title": 1,
+        "overview": 1,
+        "genres": 1,  # Türler daha önemli
+        "keywords": 1,  # Anahtar kelimeler daha önemli
+        "tagline": 1,
+        "production_companies": 1,
+        "production_countries": 1,
+        "spoken_languages": 1,
+        "release_date": 1,  # Sadece yılı kullanılacak
+        "adult": 1,  # Boolean olarak işlenecek
+    }
+
     for _, row in df.iterrows():
         text_parts = []
-        
-        if pd.notna(row.get("title")):
-            text_parts.append(str(row["title"]))
-        if pd.notna(row.get("overview")):
-            text_parts.append(str(row["overview"]))
-        if row.get("genres"):
-            text_parts.append("Genres: " + ", ".join(row["genres"]))
-        if row.get("keywords"):
-            text_parts.append("Keywords: " + ", ".join(row["keywords"]))
-        if pd.notna(row.get("tagline")):
-            text_parts.append("Tagline: " + str(row["tagline"]))
-        
+
+        # Her alanı ağırlığına göre metin parçalarına ekle
+        for field, weight in weights.items():
+            content = row.get(field)
+            
+            # Hem None/NaN hem de boş liste/string durumunu atla
+            if content is None or (isinstance(content, (list, str)) and not content):
+                continue
+
+            processed_content = ""
+            # Alanlara özel işlem yapma
+            if field == 'release_date' and pd.notna(content):
+                try:
+                    year = pd.to_datetime(content).year
+                    processed_content = f"Released in {year}"
+                except (ValueError, TypeError):
+                    continue  # Hatalı formatı atla
+            elif field == 'adult':
+                if content: # Değer True ise
+                    processed_content = "Adult Content"
+                else:
+                    continue # False ise ekleme
+            elif isinstance(content, list):
+                processed_content = ", ".join(map(str, content))
+            else:
+                processed_content = str(content)
+            
+            # Etiket ekleyerek içeriğin anlamsal bağlamını güçlendir
+            if field not in ['overview', 'title', 'tagline', 'release_date', 'adult']:
+                labeled_content = f"{field.replace('_', ' ').title()}: {processed_content}"
+            else:
+                labeled_content = processed_content
+            
+            if processed_content:
+                text_parts.extend([labeled_content] * weight)
+
         embedding_text = ". ".join(text_parts)
         texts.append(embedding_text if embedding_text.strip() else "")
-    
+
     return texts
 
 
@@ -150,7 +193,7 @@ def migrate_csv_to_mongodb_optimized():
     csv_file_path = "app/ai/control/first_hundred.csv"
     mongo_uri = "mongodb://localhost:27017/"
     db_name = "tests"
-    collection_name = "movie_embeddings"
+    collection_name = "movie_embeddings_bge_m3_10k"
     chunk_size = 2000  # Arttırıldı
     embedding_batch_size = 64  # GPU memory'ye göre ayarlanabilir
     max_workers = min(4, mp.cpu_count())  # CPU core sayısına göre
@@ -163,7 +206,7 @@ def migrate_csv_to_mongodb_optimized():
 
     # --- Load Embedding Model ---
     print("Embedding modeli yükleniyor...")
-    model = SentenceTransformer("all-mpnet-base-v2")
+    model = SentenceTransformer("BAAI/bge-m3")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device)
     

@@ -49,12 +49,24 @@ async def get_movies(
 
 @router.get("/search", response_model=List[MovieResponse])
 async def search_movies(
-    query: str,
+    q: str = Query(..., alias="query"),
+    limit: int = Query(10, ge=1, le=50),
     current_user: Optional[UserInDB] = Depends(get_current_user_optional)
 ):
     user_id = current_user.id if current_user else None
-    embedding = AIService.get_embedding_for_text(query)
-    movies = await MovieService.search_movies_by_vector(embedding=embedding, user_id=user_id)
+    embedding = AIService.get_embedding_for_text(q)
+    movies = await MovieService.search_movies_by_vector(embedding=embedding, user_id=user_id, limit=limit)
+    return movies
+
+@router.get("/genre/{genre}", response_model=List[MovieResponse])
+async def get_movies_by_genre(
+    genre: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    current_user: Optional[UserInDB] = Depends(get_current_user_optional)
+):
+    user_id = current_user.id if current_user else None
+    movies = await MovieService.get_movies_by_genre(genre=genre, user_id=user_id, skip=skip, limit=limit)
     return movies
 
 @router.get("/{movie_id}", response_model=MovieResponse)

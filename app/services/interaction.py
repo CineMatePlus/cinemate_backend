@@ -137,3 +137,25 @@ class InteractionService:
 
     async def get_watchlist(self, user_id: str, skip: int, limit: int) -> List[MovieResponse]:
         return await self._get_movie_list_by_interaction(user_id, "watchlist", skip, limit)
+
+    async def get_user_interaction_counts(self, user_id: str) -> dict:
+        """
+        Kullanıcının etkileşim sayılarını döndürür.
+        """
+        user_object_id = ObjectId(user_id)
+        
+        likes_count = await self.db.interactions.count_documents(
+            {"user_id": user_object_id, "interaction_type": "like"}
+        )
+        watched_count = await self.db.interactions.count_documents(
+            {"user_id": user_object_id, "interaction_type": "watched"}
+        )
+        watchlist_count = await self.db.interactions.count_documents(
+            {"user_id": user_object_id, "interaction_type": "watchlist"}
+        )
+        
+        return {
+            "likes": likes_count,
+            "watched": watched_count,
+            "watchlist": watchlist_count,
+        }

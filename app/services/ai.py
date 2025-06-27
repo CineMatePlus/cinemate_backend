@@ -6,7 +6,7 @@ import numpy as np
 # In a production environment, you might want to manage the model loading
 # more carefully (e.g., as a singleton during application startup).
 # model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-model = SentenceTransformer('all-MiniLM-L6-v2')
+model = SentenceTransformer('BAAI/bge-m3')
 
 
 class AIService:

@@ -4,7 +4,7 @@ from bson import ObjectId
 import numpy as np
 
 from app.db.mongodb import get_database
-from app.models.user import UserResponse
+from app.models.user import UserResponse, SimilarUserResponse
 
 class UserService:
     def __init__(self):
@@ -51,7 +51,7 @@ class UserService:
             {"$set": {"embedding": average_embedding, "updated_at": datetime.utcnow()}}
         )
 
-    async def get_similar_users(self, user_id: str, limit: int = 10) -> List[UserResponse]:
+    async def get_similar_users(self, user_id: str, limit: int = 10) -> List[SimilarUserResponse]:
         """
         Finds users with similar tastes based on their embedding vector.
         """
@@ -79,7 +79,7 @@ class UserService:
             },
             {
                 "$addFields": {
-                    "similarity_score": { "$meta": "vectorSearchScore" }
+                    "similarity": { "$meta": "vectorSearchScore" }
                 }
             },
             {
@@ -96,8 +96,8 @@ class UserService:
 
         print("\n--- Similar Users Found ---")
         for user in similar_users:
-            score = user.get('similarity_score', 'N/A')
+            score = user.get('similarity', 'N/A')
             print(f"User: {user.get('name', 'Unknown')}, Similarity Score: {score:.4f}")
         print("---------------------------\n")
 
-        return [UserResponse(**u) for u in similar_users] 
+        return [SimilarUserResponse(**u) for u in similar_users] 
