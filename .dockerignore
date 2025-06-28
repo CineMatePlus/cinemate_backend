@@ -4,11 +4,10 @@
 
 # Docker
 Dockerfile
-.dockerignore
 
 # Poetry
-.venv
-poetry.lock
+.venv/
+poetry.toml
 
 # Python
 __pycache__/
