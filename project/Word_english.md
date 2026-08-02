@@ -697,7 +697,7 @@ The Flutter mobile client communicates with the backend exclusively through a **
 
 The system is designed to be cloud-agnostic and can be deployed on any modern cloud provider (e.g., Google Cloud, AWS, Azure). The primary hardware requirement is a server environment capable of running a Python ASGI application and a managed MongoDB instance.
 
--   **Application Server:** A containerized environment (e.g., Docker) is used for deployment. The application can be run on a virtual machine or a container orchestration platform like Kubernetes for scalability.
+-   **Application Server:** The application runs directly on a server or virtual machine using Uvicorn. Scaling is handled at the host or infrastructure level.
 -   **Database Server:** **MongoDB Atlas** is the recommended choice for the database. It's a fully managed, distributed database-as-a-service. A key reason for this choice is its built-in support for **Vector Search**, which is the cornerstone of the project's AI features. This eliminates the need to set up and maintain a separate vector database like Pinecone or Weaviate.
 
 ## 9.3. Persistent Data Management
