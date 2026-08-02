@@ -4021,7 +4021,7 @@
 		"bearer": [
 			{
 				"key": "token",
-				"value": "REMOVED_EXPIRED_TOKEN",
+				"value": "",
 				"type": "string"
 			}
 		]

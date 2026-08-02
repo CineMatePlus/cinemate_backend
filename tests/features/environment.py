@@ -19,9 +19,8 @@ def fastapi_server(context):
 @fixture
 def mongodb_connection(context):
     # MongoDB bağlantısını test veritabanına yap
-    context.mongo_client = AsyncIOMotorClient(
-        "mongodb://localhost:27017"
-    )
+    mongodb_url = os.getenv("TEST_MONGODB_URL", "mongodb://localhost:27017")
+    context.mongo_client = AsyncIOMotorClient(mongodb_url)
     context.db = context.mongo_client.cinetest
     yield context.db
     # Testler bittiğinde veritabanını temizle
