@@ -1,3 +1,7 @@
+# Geliştirme Seed Verisi
+
+> Bu kayıtlar yalnızca yerel geliştirme ve test amaçlı örnek verilerdir.
+
 ### User 1: Ahmet Yılmaz
 
 -   **Username**: ahmetyilmaz

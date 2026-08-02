@@ -1,4 +1,4 @@
-# Cinemate Projesi
+# CineMate Ürün Özeti
 
 Cinemate projeniz, kullanıcıların geçmiş izleme geçmişine dayalı olarak film önerileri sunan ve benzer zevklere sahip kullanıcıları bir araya getiren bir uygulama. Proje, kullanıcıların film ve dizi veritabanını yönetmelerini ve içerikleri derecelendirmelerini sağlayacak bir platform oluşturmayı amaçlıyor. Ayrıca, AI destekli öneri ve eşleştirme sistemleriyle, kullanıcıların daha iyi içerikler keşfetmesini sağlayacak.
 

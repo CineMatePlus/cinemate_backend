@@ -1,4 +1,4 @@
-# Cinemate Application - Use Case Model
+# CineMate Use Case Model
 
 ## 1. Actors
 

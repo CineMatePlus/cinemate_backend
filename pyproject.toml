@@ -1,8 +1,9 @@
 [project]
 name = "cinemate"
 version = "0.1.0"
-description = ""
-authors = [{ name = "npcBerk", email = "muhammetberk561@gmail.com" }]
+description = "FastAPI backend for the CineMate movie and series tracking application"
+authors = [{ name = "Muhammet Berk", email = "muhammetberk561@gmail.com" }]
+license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -23,8 +24,8 @@ dependencies = [
     "pandas (>=2.3.0,<3.0.0)",
     "matplotlib (>=3.10.3,<4.0.0)",
     "seaborn (>=0.13.2,<0.14.0)",
-    "torch (>=2.7.1,<3.0.0)",
-    "torchvision (>=0.22.1,<0.23.0)",
+    "torch (==2.7.1+cpu)",
+    "torchvision (==0.22.1+cpu)",
     "numpy (==1.26.4)",
     "locust (>=2.37.11,<3.0.0)",
 ]
@@ -40,13 +41,12 @@ behave = "^1.2.6"
 
 
 [[tool.poetry.source]]
-name = "pytorch_cu128"
-url = "https://download.pytorch.org/whl/cu128"
+name = "pytorch_cpu"
+url = "https://download.pytorch.org/whl/cpu"
 priority = "explicit"
 
-
 [tool.poetry.dependencies]
-torch = {version = ">=2.7.1,<3.0.0", source = "pytorch_cu128"}
-torchvision = {version = ">=0.22.1,<0.23.0", source = "pytorch_cu128"}
+torch = { version = "==2.7.1+cpu", source = "pytorch_cpu" }
+torchvision = { version = "==0.22.1+cpu", source = "pytorch_cpu" }
 [tool.poetry]
 package-mode = false

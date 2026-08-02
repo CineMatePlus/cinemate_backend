@@ -1,4 +1,4 @@
-# Cinemate Application - Object Model
+# CineMate Backend Object Model
 
 ## 1. Overview
 

@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "f2c52267-a610-4a32-8217-e40c7e327f25",
-		"name": "Cinemate API",
+		"name": "CineMate API",
 		"description": "Film ve dizi koleksiyonları için API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "36747129"

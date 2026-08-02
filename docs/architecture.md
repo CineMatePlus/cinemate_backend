@@ -1,4 +1,4 @@
-# CineMate Projesi - Teknik Rapor
+# Backend Mimarisi ve Teknik Tasarım
 
 ## İçindekiler
 1. [Proje Genel Bakış](#proje-genel-bakış)
@@ -1781,4 +1781,4 @@ Kullanıcı davranışlarına dair detaylı istatistikler ve grafikler:
 
 ---
 
-Bu rapor, CineMate projesinin teknik yapısını ve özelliklerini detaylı bir şekilde anlatmaktadır. Proje, modern web geliştirme yöntemlerini kullanarak ölçeklenebilir, güvenli ve performanslı bir film/dizi platformu sunmaktadır. Uygulanan teknolojiler ve mimari kararlar, gelecekteki büyüme ve yeni özelliklerin entegrasyonu için sağlam bir temel oluşturmaktadır. 
+Bu rapor, CineMate projesinin teknik yapısını ve özelliklerini detaylı bir şekilde anlatmaktadır. Proje, modern web geliştirme yöntemlerini kullanarak ölçeklenebilir, güvenli ve performanslı bir film/dizi platformu sunmaktadır. Uygulanan teknolojiler ve mimari kararlar, gelecekteki büyüme ve yeni özelliklerin entegrasyonu için sağlam bir temel oluşturmaktadır.

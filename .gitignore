@@ -1,5 +1,7 @@
 # CSV files
 *.csv
+!data/
+!data/sample_movies.csv
 
 
 

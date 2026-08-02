@@ -1,5 +1,7 @@
 # Koleksiyon API Dokümantasyonu
 
+> Canlı ve tüm endpoint'leri kapsayan şema için çalışan API'nin `/api/v1/docs` adresini kullanın.
+
 Bu dokümantasyon, Cinemate API'nin koleksiyon işlemleri için kullanılan endpoint'lerini açıklamaktadır.
 
 ## Endpoint'ler
@@ -231,4 +233,4 @@ Tüm endpoint'ler (public koleksiyonları getirme hariç) için kimlik doğrulam
 
 ```http
 Authorization: Bearer <token>
-``` 
+```
