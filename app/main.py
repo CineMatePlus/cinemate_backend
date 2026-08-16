@@ -2,13 +2,18 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.db.mongodb import init_db
+from app.db.mongodb import (
+    init_db,
+    inspect_vector_search_indexes,
+    verify_vector_search_indexes_ready,
+)
 from app.routes import auth, collection, comment, interaction, movie, user
 from app.services.embedding import (
     EmbeddingProviderError,
     close_embedding_service,
     get_embedding_service,
 )
+from app.services.vector_search import vector_search_metrics
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -51,6 +56,8 @@ async def startup_event():
     """Uygulama başlatılırken çalışacak işlemler"""
     # Veritabanı bağlantısını ve indeksleri oluştur
     await init_db()
+    if settings.VECTOR_SEARCH_STARTUP_CHECK:
+        await verify_vector_search_indexes_ready()
     if settings.EMBEDDING_WARMUP:
         await get_embedding_service().warmup()
 
@@ -80,3 +87,19 @@ async def embedding_health():
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
+
+
+@app.get("/health/vector-search")
+async def vector_search_health():
+    indexes = await inspect_vector_search_indexes()
+    if not all(index["ready"] for index in indexes):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"status": "unhealthy", "indexes": indexes},
+        )
+    return {"status": "healthy", "indexes": indexes}
+
+
+@app.get("/metrics/vector-search")
+async def vector_search_measurements():
+    return vector_search_metrics.snapshot()

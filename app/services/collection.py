@@ -1,18 +1,19 @@
-from typing import List, Optional
 from datetime import datetime
-from fastapi import HTTPException, status
-from bson import ObjectId
+from typing import List, Optional
 
-from app.models.collection import (
-    CollectionInDB,
-    CollectionCreate,
-    CollectionUpdate,
-    CollectionResponse,
-)
+from bson import ObjectId
+from fastapi import HTTPException, status
+
 from app.db.mongodb import get_database
+from app.models.collection import (
+    CollectionCreate,
+    CollectionInDB,
+    CollectionResponse,
+    CollectionUpdate,
+)
 from app.models.movie import MovieResponse
-from app.services.movie import MovieService
 from app.models.pyobjectid import PyObjectId
+from app.services.movie import MovieService
 
 
 class CollectionService:
@@ -24,7 +25,7 @@ class CollectionService:
     ) -> CollectionInDB:
         """Yeni bir koleksiyon oluşturur"""
         user_object_id = ObjectId(user_id)
-        
+
         existing_collection = await self.db.collections.find_one(
             {"user_id": user_object_id, "name": collection_data.name}
         )
@@ -46,18 +47,22 @@ class CollectionService:
         )
 
         result = await self.db.collections.insert_one(db_collection)
-        
+
         created_collection = await self.db.collections.find_one(
             {"_id": result.inserted_id}
         )
-        
+
         if created_collection:
             return CollectionInDB(**created_collection)
-        
+
         raise HTTPException(status_code=500, detail="Collection could not be created.")
 
     async def get_user_collections(
-        self, user_id: str, current_user_id: Optional[str], skip: int = 0, limit: int = 10
+        self,
+        user_id: str,
+        current_user_id: Optional[str],
+        skip: int = 0,
+        limit: int = 10,
     ) -> List[CollectionResponse]:
         user_object_id = ObjectId(user_id)
         match_stage = {"user_id": user_object_id}
@@ -81,12 +86,12 @@ class CollectionService:
             {
                 "$addFields": {
                     "owner_name": "$owner_info.name",
-                    "movie_count": {"$size": "$movie_ids"}
+                    "movie_count": {"$size": "$movie_ids"},
                 }
             },
-            {"$project": {"owner_info": 0}}
+            {"$project": {"owner_info": 0}},
         ]
-        
+
         collections_cursor = self.db.collections.aggregate(pipeline)
         collections = await collections_cursor.to_list(length=limit)
         return [CollectionResponse(**c) for c in collections]
@@ -110,10 +115,10 @@ class CollectionService:
             {
                 "$addFields": {
                     "owner_name": "$owner_info.name",
-                    "movie_count": {"$size": "$movie_ids"}
+                    "movie_count": {"$size": "$movie_ids"},
                 }
             },
-             {"$project": {"owner_info": 0}}
+            {"$project": {"owner_info": 0}},
         ]
 
         collections_cursor = self.db.collections.aggregate(pipeline)
@@ -123,13 +128,20 @@ class CollectionService:
             raise HTTPException(status_code=404, detail="Collection not found")
 
         collection_data = collections[0]
-        
-        if not collection_data.get('is_public') and str(collection_data.get('user_id')) != current_user_id:
-            raise HTTPException(status_code=403, detail="Not authorized to view this collection")
+
+        if (
+            not collection_data.get("is_public")
+            and str(collection_data.get("user_id")) != current_user_id
+        ):
+            raise HTTPException(
+                status_code=403, detail="Not authorized to view this collection"
+            )
 
         return CollectionResponse(**collection_data)
-    
-    async def _get_collection_and_validate_owner(self, collection_id: str, user_id: str) -> dict:
+
+    async def _get_collection_and_validate_owner(
+        self, collection_id: str, user_id: str
+    ) -> dict:
         collection_obj_id = ObjectId(collection_id)
         user_obj_id = ObjectId(user_id)
 
@@ -137,10 +149,12 @@ class CollectionService:
 
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found")
-        
+
         if collection["user_id"] != user_obj_id:
-            raise HTTPException(status_code=403, detail="You are not the owner of this collection")
-        
+            raise HTTPException(
+                status_code=403, detail="You are not the owner of this collection"
+            )
+
         return collection
 
     async def update_collection(
@@ -148,10 +162,10 @@ class CollectionService:
     ) -> CollectionResponse:
         """Koleksiyonu günceller"""
         await self._get_collection_and_validate_owner(collection_id, user_id)
-        
+
         update_data = collection_update.dict(exclude_unset=True)
         if not update_data:
-             raise HTTPException(status_code=400, detail="No update data provided")
+            raise HTTPException(status_code=400, detail="No update data provided")
 
         update_data["updated_at"] = datetime.utcnow()
 
@@ -164,7 +178,9 @@ class CollectionService:
                 }
             )
             if existing_name:
-                raise HTTPException(status_code=409, detail="This collection name already exists.")
+                raise HTTPException(
+                    status_code=409, detail="This collection name already exists."
+                )
 
         await self.db.collections.update_one(
             {"_id": ObjectId(collection_id)}, {"$set": update_data}
@@ -174,9 +190,9 @@ class CollectionService:
 
     async def delete_collection(self, collection_id: str, user_id: str) -> bool:
         await self._get_collection_and_validate_owner(collection_id, user_id)
-        
+
         result = await self.db.collections.delete_one({"_id": ObjectId(collection_id)})
-        
+
         if result.deleted_count == 1:
             return True
         return False
@@ -185,15 +201,14 @@ class CollectionService:
         self, collection_id: str, movie_id: str, user_id: str
     ) -> bool:
         await self._get_collection_and_validate_owner(collection_id, user_id)
-        
+
         movie_obj_id = ObjectId(movie_id)
         movie = await self.db.movies.find_one({"_id": movie_obj_id})
         if not movie:
             raise HTTPException(status_code=404, detail="Movie not found")
 
         result = await self.db.collections.update_one(
-            {"_id": ObjectId(collection_id)},
-            {"$addToSet": {"movie_ids": movie_obj_id}}
+            {"_id": ObjectId(collection_id)}, {"$addToSet": {"movie_ids": movie_obj_id}}
         )
 
         return result.modified_count > 0
@@ -205,20 +220,26 @@ class CollectionService:
 
         result = await self.db.collections.update_one(
             {"_id": ObjectId(collection_id)},
-            {"$pull": {"movie_ids": ObjectId(movie_id)}}
+            {"$pull": {"movie_ids": ObjectId(movie_id)}},
         )
-        
+
         if result.modified_count == 0:
-            raise HTTPException(status_code=404, detail="Movie not found in this collection")
+            raise HTTPException(
+                status_code=404, detail="Movie not found in this collection"
+            )
 
         return result.modified_count > 0
 
-    async def get_movie_ids_in_collection(self, collection_id: str, user_id: str) -> List[str]:
+    async def get_movie_ids_in_collection(
+        self, collection_id: str, user_id: str
+    ) -> List[str]:
         """
         Fetches all movie IDs from a specific collection for a given user.
         Validates that the user is the owner of the collection.
         """
-        collection = await self._get_collection_and_validate_owner(collection_id, user_id)
+        collection = await self._get_collection_and_validate_owner(
+            collection_id, user_id
+        )
         movie_ids = collection.get("movie_ids", [])
         return [str(movie_id) for movie_id in movie_ids]
 
@@ -242,17 +263,26 @@ class CollectionService:
         except Exception as e:
             self._handle_exception(e)
 
-    async def get_movies_in_collection(self, collection_id: str, current_user_id: Optional[str], skip: int, limit: int) -> List[MovieResponse]:
-        collection = await self.db.collections.find_one({"_id": ObjectId(collection_id)})
-        
+    async def get_movies_in_collection(
+        self, collection_id: str, current_user_id: Optional[str], skip: int, limit: int
+    ) -> List[MovieResponse]:
+        collection = await self.db.collections.find_one(
+            {"_id": ObjectId(collection_id)}
+        )
+
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found")
-        
-        if not collection.get('is_public') and str(collection.get('user_id')) != current_user_id:
-            raise HTTPException(status_code=403, detail="Not authorized to view this collection")
+
+        if (
+            not collection.get("is_public")
+            and str(collection.get("user_id")) != current_user_id
+        ):
+            raise HTTPException(
+                status_code=403, detail="Not authorized to view this collection"
+            )
 
         movie_ids = collection.get("movie_ids", [])
-        
+
         paginated_movie_ids = movie_ids[skip : skip + limit]
 
         if not paginated_movie_ids:
@@ -262,18 +292,24 @@ class CollectionService:
             {"$match": {"_id": {"$in": paginated_movie_ids}}},
             # Gerekirse sıralama ekleyebiliriz, örn: {"$addFields": {"__order": {"$indexOfArray": [paginated_movie_ids, "$_id"]}}}, {"$sort": {"__order": 1}}
         ]
-        
+
         # Film listesini kullanıcı etkileşimleriyle zenginleştirelim
         if current_user_id:
-            movies_pipeline.extend(MovieService._get_user_interaction_pipeline(current_user_id))
-        
-        movies_pipeline.append({"$addFields": {"_id": {"$toString": "$_id"}}})
-        
+            movies_pipeline.extend(
+                MovieService._get_user_interaction_pipeline(current_user_id)
+            )
+
+        movies_pipeline.extend(MovieService._movie_response_pipeline())
+
         movies_cursor = self.db.movies.aggregate(movies_pipeline)
         movies = await movies_cursor.to_list(length=limit)
-        
+
         # Orijinal sıralamayı korumak için
-        movies_dict = {movie['_id']: movie for movie in movies}
-        sorted_movies = [MovieResponse(**movies_dict[str(oid)]) for oid in paginated_movie_ids if str(oid) in movies_dict]
+        movies_dict = {movie["_id"]: movie for movie in movies}
+        sorted_movies = [
+            MovieResponse(**movies_dict[str(oid)])
+            for oid in paginated_movie_ids
+            if str(oid) in movies_dict
+        ]
 
         return sorted_movies

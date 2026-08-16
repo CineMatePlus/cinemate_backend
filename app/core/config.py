@@ -55,12 +55,33 @@ class Settings:
     EMBEDDING_TIMEOUT_SECONDS: float = float(get_env("EMBEDDING_TIMEOUT_SECONDS", "30"))
     EMBEDDING_BATCH_SIZE: int = int(get_env("EMBEDDING_BATCH_SIZE", "32"))
     EMBEDDING_WARMUP: bool = get_bool_env("EMBEDDING_WARMUP", False)
+    EMBEDDING_QUERY_CACHE_SIZE: int = int(get_env("EMBEDDING_QUERY_CACHE_SIZE", "512"))
+    EMBEDDING_QUERY_CACHE_TTL_SECONDS: float = float(
+        get_env("EMBEDDING_QUERY_CACHE_TTL_SECONDS", "600")
+    )
     EMBEDDING_QUERY_PREFIX: str = get_env(
         "EMBEDDING_QUERY_PREFIX",
         "Instruct: Retrieve movie and TV show descriptions relevant to the user query.\\nQuery: ",
     )
     MOVIE_VECTOR_INDEX: str = get_env("MOVIE_VECTOR_INDEX", "movie_vector_index")
     USER_VECTOR_INDEX: str = get_env("USER_VECTOR_INDEX", "user_vector_index")
+
+    # Vector search performance and observability
+    VECTOR_SEARCH_CANDIDATE_MULTIPLIER: int = int(
+        get_env("VECTOR_SEARCH_CANDIDATE_MULTIPLIER", "20")
+    )
+    VECTOR_SEARCH_MIN_CANDIDATES: int = int(
+        get_env("VECTOR_SEARCH_MIN_CANDIDATES", "100")
+    )
+    VECTOR_SEARCH_MAX_CANDIDATES: int = int(
+        get_env("VECTOR_SEARCH_MAX_CANDIDATES", "1000")
+    )
+    VECTOR_SEARCH_METRICS_WINDOW: int = int(
+        get_env("VECTOR_SEARCH_METRICS_WINDOW", "100")
+    )
+    VECTOR_SEARCH_STARTUP_CHECK: bool = get_bool_env(
+        "VECTOR_SEARCH_STARTUP_CHECK", True
+    )
 
 
 settings = Settings()

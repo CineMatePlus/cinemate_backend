@@ -5,9 +5,13 @@ from fastapi import HTTPException
 
 from app.core.config import settings
 from app.db.mongodb import get_database
-from app.models.interaction import InteractionInDB
-from app.models.movie import MovieInDB, MovieResponse
+from app.models.movie import MovieResponse
 from app.services.vector_math import average_vectors
+from app.services.vector_search import (
+    build_vector_search_stage,
+    record_vector_search,
+    start_vector_search_timer,
+)
 
 db = get_database()
 
@@ -22,25 +26,7 @@ class MovieService:
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        # Convert _id to string for Pydantic compatibility
-        pipeline.extend(
-            [
-                {"$addFields": {"_id": {"$toString": "$_id"}}},
-                {"$addFields": {"title": {"$toString": "$title"}}},
-                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-                {
-                    "$addFields": {
-                        "production_companies": {
-                            "$map": {
-                                "input": "$production_companies",
-                                "as": "pc",
-                                "in": {"$toString": "$$pc"},
-                            }
-                        }
-                    }
-                },
-            ]
-        )
+        pipeline.extend(MovieService._movie_response_pipeline())
 
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=limit)
@@ -55,24 +41,7 @@ class MovieService:
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        pipeline.extend(
-            [
-                {"$addFields": {"_id": {"$toString": "$_id"}}},
-                {"$addFields": {"title": {"$toString": "$title"}}},
-                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-                {
-                    "$addFields": {
-                        "production_companies": {
-                            "$map": {
-                                "input": "$production_companies",
-                                "as": "pc",
-                                "in": {"$toString": "$$pc"},
-                            }
-                        }
-                    }
-                },
-            ]
-        )
+        pipeline.extend(MovieService._movie_response_pipeline())
 
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=limit)
@@ -90,25 +59,7 @@ class MovieService:
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        # Convert _id to string for Pydantic compatibility
-        pipeline.extend(
-            [
-                {"$addFields": {"_id": {"$toString": "$_id"}}},
-                {"$addFields": {"title": {"$toString": "$title"}}},
-                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-                {
-                    "$addFields": {
-                        "production_companies": {
-                            "$map": {
-                                "input": "$production_companies",
-                                "as": "pc",
-                                "in": {"$toString": "$$pc"},
-                            }
-                        }
-                    }
-                },
-            ]
-        )
+        pipeline.extend(MovieService._movie_response_pipeline())
 
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=1)
@@ -122,52 +73,26 @@ class MovieService:
     async def search_movies_by_vector(
         embedding: List[float], user_id: Optional[str] = None, limit: int = 10
     ) -> List[MovieResponse]:
-        # The configured Atlas/Atlas Local vector index targets the embedding field.
         pipeline = [
-            {
-                "$vectorSearch": {
-                    "index": settings.MOVIE_VECTOR_INDEX,
-                    "path": "embedding",
-                    "queryVector": embedding,
-                    "numCandidates": 150,
-                    "limit": limit,
-                }
-            },
+            build_vector_search_stage(
+                index=settings.MOVIE_VECTOR_INDEX,
+                query_vector=embedding,
+                limit=limit,
+            ),
             {"$addFields": {"similarity_score": {"$meta": "vectorSearchScore"}}},
         ]
 
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        pipeline.extend(
-            [
-                {"$addFields": {"_id": {"$toString": "$_id"}}},
-                {"$addFields": {"title": {"$toString": "$title"}}},
-                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-                {
-                    "$addFields": {
-                        "production_companies": {
-                            "$map": {
-                                "input": "$production_companies",
-                                "as": "pc",
-                                "in": {"$toString": "$$pc"},
-                            }
-                        }
-                    }
-                },
-            ]
-        )
+        pipeline.extend(MovieService._movie_response_pipeline())
 
+        started_at = start_vector_search_timer()
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=limit)
-
-        print("\n--- Text Search Results ---")
-        for movie in movies:
-            score = movie.get("similarity_score", "N/A")
-            print(
-                f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}"
-            )
-        print("---------------------------\n")
+        record_vector_search(
+            "movie_text_search", started_at, movies, "similarity_score"
+        )
 
         return [MovieResponse(**movie) for movie in movies]
 
@@ -195,16 +120,13 @@ class MovieService:
         average_embedding = average_vectors(embeddings)
 
         # Find movies similar to the average embedding, excluding the ones already in the list
+        search_limit = limit + len(object_ids)
         pipeline = [
-            {
-                "$vectorSearch": {
-                    "index": settings.MOVIE_VECTOR_INDEX,
-                    "path": "embedding",
-                    "queryVector": average_embedding,
-                    "numCandidates": 150,
-                    "limit": limit + len(object_ids),
-                }
-            },
+            build_vector_search_stage(
+                index=settings.MOVIE_VECTOR_INDEX,
+                query_vector=average_embedding,
+                limit=search_limit,
+            ),
             {"$addFields": {"similarity_score": {"$meta": "vectorSearchScore"}}},
             {"$match": {"_id": {"$nin": object_ids}}},
             {"$limit": limit},
@@ -213,35 +135,17 @@ class MovieService:
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        pipeline.extend(
-            [
-                {"$addFields": {"_id": {"$toString": "$_id"}}},
-                {"$addFields": {"title": {"$toString": "$title"}}},
-                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-                {
-                    "$addFields": {
-                        "production_companies": {
-                            "$map": {
-                                "input": "$production_companies",
-                                "as": "pc",
-                                "in": {"$toString": "$$pc"},
-                            }
-                        }
-                    }
-                },
-            ]
-        )
+        pipeline.extend(MovieService._movie_response_pipeline())
 
+        started_at = start_vector_search_timer()
         similar_movies_cursor = db.movies.aggregate(pipeline)
         similar_movies = await similar_movies_cursor.to_list(length=limit)
-
-        print("\n--- List Recommendation Results ---")
-        for movie in similar_movies:
-            score = movie.get("similarity_score", "N/A")
-            print(
-                f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}"
-            )
-        print("-----------------------------------\n")
+        record_vector_search(
+            "movie_list_recommendations",
+            started_at,
+            similar_movies,
+            "similarity_score",
+        )
 
         return [MovieResponse(**movie) for movie in similar_movies]
 
@@ -252,32 +156,24 @@ class MovieService:
         if not ObjectId.is_valid(movie_id):
             raise HTTPException(status_code=400, detail="Invalid movie ID format")
 
-        target_movie = await db.movies.find_one({"_id": ObjectId(movie_id)})
+        target_movie = await db.movies.find_one(
+            {"_id": ObjectId(movie_id)}, {"embedding": 1, "title": 1}
+        )
         if not target_movie:
             raise HTTPException(status_code=404, detail="Target movie not found")
 
-        # Convert the _id from ObjectId to string before passing to Pydantic model
-        target_movie["_id"] = str(target_movie["_id"])
-
-        target_movie_model = MovieInDB(**target_movie)
-
-        embedding = target_movie_model.embedding
+        embedding = target_movie.get("embedding")
         if not embedding:
             raise HTTPException(
                 status_code=404, detail="Embeddings for the target movie not found."
             )
 
-        # The configured Atlas/Atlas Local vector index targets the embedding field.
         pipeline = [
-            {
-                "$vectorSearch": {
-                    "index": settings.MOVIE_VECTOR_INDEX,
-                    "path": "embedding",
-                    "queryVector": embedding,
-                    "numCandidates": 150,
-                    "limit": 11,  # 10 similar + the movie itself
-                }
-            },
+            build_vector_search_stage(
+                index=settings.MOVIE_VECTOR_INDEX,
+                query_vector=embedding,
+                limit=11,
+            ),
             {"$addFields": {"similarity_score": {"$meta": "vectorSearchScore"}}},
             {"$match": {"_id": {"$ne": ObjectId(movie_id)}}},
             {"$limit": 10},
@@ -286,35 +182,12 @@ class MovieService:
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        pipeline.extend(
-            [
-                {"$addFields": {"_id": {"$toString": "$_id"}}},
-                {"$addFields": {"title": {"$toString": "$title"}}},
-                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-                {
-                    "$addFields": {
-                        "production_companies": {
-                            "$map": {
-                                "input": "$production_companies",
-                                "as": "pc",
-                                "in": {"$toString": "$$pc"},
-                            }
-                        }
-                    }
-                },
-            ]
-        )
+        pipeline.extend(MovieService._movie_response_pipeline())
 
+        started_at = start_vector_search_timer()
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=10)
-
-        print(f"\n--- Similar Movies for '{target_movie.get('title')}' ---")
-        for movie in movies:
-            score = movie.get("similarity_score", "N/A")
-            print(
-                f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}"
-            )
-        print("------------------------------------------\n")
+        record_vector_search("similar_movies", started_at, movies, "similarity_score")
 
         return [MovieResponse(**movie) for movie in movies]
 
@@ -406,4 +279,25 @@ class MovieService:
                 },
             },
             {"$project": {"user_interactions": 0}},
+        ]
+
+    @staticmethod
+    def _movie_response_pipeline() -> List[dict]:
+        """Normalize MongoDB values and keep the large vector out of API results."""
+        return [
+            {
+                "$addFields": {
+                    "_id": {"$toString": "$_id"},
+                    "title": {"$toString": "$title"},
+                    "original_title": {"$toString": "$original_title"},
+                    "production_companies": {
+                        "$map": {
+                            "input": {"$ifNull": ["$production_companies", []]},
+                            "as": "pc",
+                            "in": {"$toString": "$$pc"},
+                        }
+                    },
+                }
+            },
+            {"$project": {"embedding": 0}},
         ]

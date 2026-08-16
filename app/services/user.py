@@ -5,8 +5,13 @@ from bson import ObjectId
 
 from app.core.config import settings
 from app.db.mongodb import get_database
-from app.models.user import SimilarUserResponse, UserResponse
+from app.models.user import SimilarUserResponse
 from app.services.vector_math import average_vectors
+from app.services.vector_search import (
+    build_vector_search_stage,
+    record_vector_search,
+    start_vector_search_timer,
+)
 
 
 class UserService:
@@ -85,19 +90,13 @@ class UserService:
 
         user_embedding = user["embedding"]
 
-        # 2. Use $vectorSearch to find similar users
-        # Note: A vector search index on the 'embedding' field of the 'users' collection is required.
+        search_limit = limit + 1
         pipeline = [
-            {
-                "$vectorSearch": {
-                    "index": settings.USER_VECTOR_INDEX,
-                    "path": "embedding",
-                    "queryVector": user_embedding,
-                    "numCandidates": 150,
-                    "limit": limit
-                    + 1,  # +1 to include the user itself, which we'll filter out
-                }
-            },
+            build_vector_search_stage(
+                index=settings.USER_VECTOR_INDEX,
+                query_vector=user_embedding,
+                limit=search_limit,
+            ),
             {"$addFields": {"similarity": {"$meta": "vectorSearchScore"}}},
             {
                 "$match": {
@@ -108,15 +107,12 @@ class UserService:
             },
             {"$limit": limit},
             {"$addFields": {"_id": {"$toString": "$_id"}}},
+            {"$project": {"embedding": 0}},
         ]
 
+        started_at = start_vector_search_timer()
         similar_users_cursor = self.db.users.aggregate(pipeline)
         similar_users = await similar_users_cursor.to_list(length=limit)
-
-        print("\n--- Similar Users Found ---")
-        for user in similar_users:
-            score = user.get("similarity", "N/A")
-            print(f"User: {user.get('name', 'Unknown')}, Similarity Score: {score:.4f}")
-        print("---------------------------\n")
+        record_vector_search("similar_users", started_at, similar_users, "similarity")
 
         return [SimilarUserResponse(**u) for u in similar_users]

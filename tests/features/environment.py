@@ -18,6 +18,7 @@ def fastapi_server(context):
             "MONGODB_URL": mongodb_url,
             "MONGODB_DB": "cinetest",
             "EMBEDDING_WARMUP": "false",
+            "VECTOR_SEARCH_STARTUP_CHECK": "false",
         }
     )
     process = subprocess.Popen(

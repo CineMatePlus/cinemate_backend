@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from datetime import datetime
 
@@ -71,6 +72,57 @@ class EmbeddingServiceTests(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(EmbeddingProviderError, "dimension mismatch"):
             await service.embed_query("query")
+
+    async def test_reuses_cached_query_embedding_and_returns_a_copy(self):
+        provider = RecordingProvider()
+        service = EmbeddingService(
+            provider,
+            model="test-model",
+            dimensions=3,
+            query_cache_size=2,
+            query_cache_ttl_seconds=60,
+        )
+
+        first = await service.embed_query("science fiction")
+        first[0] = 999
+        second = await service.embed_query("science fiction")
+
+        self.assertEqual(provider.calls, [["science fiction"]])
+        self.assertEqual(second, [0.0, 0.0, 0.0])
+        self.assertEqual(service.query_cache_info()["hits"], 1)
+
+    async def test_evicts_least_recent_query_when_cache_is_full(self):
+        provider = RecordingProvider()
+        service = EmbeddingService(
+            provider,
+            model="test-model",
+            dimensions=3,
+            query_cache_size=1,
+            query_cache_ttl_seconds=60,
+        )
+
+        await service.embed_query("first")
+        await service.embed_query("second")
+        await service.embed_query("first")
+
+        self.assertEqual(len(provider.calls), 3)
+        self.assertEqual(service.query_cache_info()["evictions"], 2)
+
+    async def test_refreshes_query_after_cache_ttl_expires(self):
+        provider = RecordingProvider()
+        service = EmbeddingService(
+            provider,
+            model="test-model",
+            dimensions=3,
+            query_cache_size=2,
+            query_cache_ttl_seconds=0.01,
+        )
+
+        await service.embed_query("short lived")
+        await asyncio.sleep(0.02)
+        await service.embed_query("short lived")
+
+        self.assertEqual(len(provider.calls), 2)
 
 
 class OllamaProviderTests(unittest.IsolatedAsyncioTestCase):

@@ -106,7 +106,10 @@ Script aşağıdaki 1024 boyutlu cosine indekslerini oluşturur:
 | `movies` | `movie_vector_index` | `embedding` |
 | `users` | `user_vector_index` | `embedding` |
 
-İndekslerin durumu `READY` olana kadar vektör sorgularını çalıştırmayın. Yerel ve Atlas kurulum adımları için [`docs/atlas-vector-search.md`](docs/atlas-vector-search.md) dosyasını kullanın.
+API varsayılan olarak başlangıçta iki indeksi de denetler ve durumları `READY`
+değilse açık bir hatayla durur. Yalnızca normal MongoDB kullanan test ortamlarında
+`VECTOR_SEARCH_STARTUP_CHECK=false` ayarlanmalıdır. Yerel ve Atlas kurulum adımları
+için [`docs/atlas-vector-search.md`](docs/atlas-vector-search.md) dosyasını kullanın.
 
 ## 5. API'yi çalıştırma
 
@@ -121,6 +124,9 @@ Uygulama başladıktan sonra:
 - ReDoc: `http://localhost:8000/api/v1/redoc`
 
 Embedding sağlık kontrolü `http://localhost:8000/health/embedding` adresindedir.
+Vector indeks durumu `http://localhost:8000/health/vector-search`, son sorguların
+gecikme ve similarity dağılımları ise `http://localhost:8000/metrics/vector-search`
+adresindedir. Ölçümler process başına bellekte ve sınırlı bir pencerede tutulur.
 `EMBEDDING_WARMUP=true` ayarlanırsa API başlangıçta bir deneme embedding'i üretir
 ve Ollama/model hazır değilse başlangıcı durdurur. Varsayılan `false` olduğundan
 embedding servisi kapalıyken CRUD endpoint'leri çalışmaya devam eder.
@@ -128,6 +134,14 @@ embedding servisi kapalıyken CRUD endpoint'leri çalışmaya devam eder.
 Backend Docker içinde, Ollama host işletim sisteminde çalışıyorsa
 `EMBEDDING_BASE_URL=http://host.docker.internal:11434` kullanın. Apple Silicon'da
 Metal hızlandırmasını korumak için Ollama'nın host üzerinde native çalışması önerilir.
+
+Tekrarlanan arama metinlerinin Ollama çağrıları varsayılan olarak 512 girdilik,
+10 dakika TTL'li LRU cache ile azaltılır. `EMBEDDING_QUERY_CACHE_SIZE` ve
+`EMBEDDING_QUERY_CACHE_TTL_SECONDS` ile ayarlanabilir; boyut veya TTL `0` yapılırsa
+cache kapanır. Vector Search `numCandidates` değeri sonuç limitinin 20 katı olarak
+dinamik hesaplanır ve 100-1000 aralığında tutulur. Bu politika
+`VECTOR_SEARCH_CANDIDATE_MULTIPLIER`, `VECTOR_SEARCH_MIN_CANDIDATES` ve
+`VECTOR_SEARCH_MAX_CANDIDATES` ile yük testine göre ayarlanabilir.
 
 ## Testler
 

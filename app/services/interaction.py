@@ -1,7 +1,8 @@
-from typing import Tuple, List
 from datetime import datetime
-from fastapi import HTTPException, status
+from typing import List, Tuple
+
 from bson import ObjectId
+from fastapi import HTTPException, status
 
 from app.db.mongodb import get_database
 from app.models.movie import MovieResponse
@@ -17,7 +18,7 @@ class InteractionService:
     async def _validate_movie_exists(self, movie_id: str):
         if not ObjectId.is_valid(movie_id):
             raise HTTPException(status_code=400, detail="Invalid movie ID format")
-        
+
         movie = await self.db.movies.find_one({"_id": ObjectId(movie_id)})
         if not movie:
             raise HTTPException(status_code=404, detail="Movie not found")
@@ -83,7 +84,7 @@ class InteractionService:
         """
         interactions_cursor = self.db.interactions.find(
             {"user_id": ObjectId(user_id), "interaction_type": interaction_type},
-            {"movie_id": 1}
+            {"movie_id": 1},
         )
         movie_ids = await interactions_cursor.to_list(length=None)
         return [str(item["movie_id"]) for item in movie_ids]
@@ -96,54 +97,72 @@ class InteractionService:
         """
         # İlk olarak, kullanıcının ilgili etkileşimlerini sayfalayarak bulalım.
         base_pipeline = [
-            {"$match": {"user_id": ObjectId(user_id), "interaction_type": interaction_type}},
-            {"$sort": {"created_at": -1}},
-                {"$skip": skip},
-                {"$limit": limit},
-            ]
-
-        # Bu etkileşimlere karşılık gelen film detaylarını çekelim.
-        base_pipeline.extend([
-                {
-                    "$lookup": {
-                    "from": "movies",
-                    "localField": "movie_id",
-                    "foreignField": "_id",  # Burası _id olmalı
-                    "as": "movie_details"
+            {
+                "$match": {
+                    "user_id": ObjectId(user_id),
+                    "interaction_type": interaction_type,
                 }
             },
-            {"$unwind": "$movie_details"},
-            {"$replaceRoot": {"newRoot": "$movie_details"}},
-        ])
+            {"$sort": {"created_at": -1}},
+            {"$skip": skip},
+            {"$limit": limit},
+        ]
+
+        # Bu etkileşimlere karşılık gelen film detaylarını çekelim.
+        base_pipeline.extend(
+            [
+                {
+                    "$lookup": {
+                        "from": "movies",
+                        "localField": "movie_id",
+                        "foreignField": "_id",  # Burası _id olmalı
+                        "as": "movie_details",
+                    }
+                },
+                {"$unwind": "$movie_details"},
+                {"$replaceRoot": {"newRoot": "$movie_details"}},
+            ]
+        )
 
         # Artık elimizde sadece istenen sayfadaki filmler var.
         # Şimdi bu filmleri MovieService'in kanıtlanmış metoduyla zenginleştirelim.
         enrichment_pipeline = MovieService._get_user_interaction_pipeline(user_id)
-        
-        # ID'yi string'e çevirme adımını da ekleyelim.
-        final_pipeline = base_pipeline + enrichment_pipeline + [
-            {"$addFields": {"_id": {"$toString": "$_id"}}}
-        ]
-        
+
+        final_pipeline = (
+            base_pipeline
+            + enrichment_pipeline
+            + MovieService._movie_response_pipeline()
+        )
+
         movies_cursor = self.db.interactions.aggregate(final_pipeline)
         movies = await movies_cursor.to_list(length=limit)
         return [MovieResponse(**movie) for movie in movies]
 
-    async def get_liked_movies(self, user_id: str, skip: int, limit: int) -> List[MovieResponse]:
+    async def get_liked_movies(
+        self, user_id: str, skip: int, limit: int
+    ) -> List[MovieResponse]:
         return await self._get_movie_list_by_interaction(user_id, "like", skip, limit)
 
-    async def get_watched_history(self, user_id: str, skip: int, limit: int) -> List[MovieResponse]:
-        return await self._get_movie_list_by_interaction(user_id, "watched", skip, limit)
+    async def get_watched_history(
+        self, user_id: str, skip: int, limit: int
+    ) -> List[MovieResponse]:
+        return await self._get_movie_list_by_interaction(
+            user_id, "watched", skip, limit
+        )
 
-    async def get_watchlist(self, user_id: str, skip: int, limit: int) -> List[MovieResponse]:
-        return await self._get_movie_list_by_interaction(user_id, "watchlist", skip, limit)
+    async def get_watchlist(
+        self, user_id: str, skip: int, limit: int
+    ) -> List[MovieResponse]:
+        return await self._get_movie_list_by_interaction(
+            user_id, "watchlist", skip, limit
+        )
 
     async def get_user_interaction_counts(self, user_id: str) -> dict:
         """
         Kullanıcının etkileşim sayılarını döndürür.
         """
         user_object_id = ObjectId(user_id)
-        
+
         likes_count = await self.db.interactions.count_documents(
             {"user_id": user_object_id, "interaction_type": "like"}
         )
@@ -153,7 +172,7 @@ class InteractionService:
         watchlist_count = await self.db.interactions.count_documents(
             {"user_id": user_object_id, "interaction_type": "watchlist"}
         )
-        
+
         return {
             "likes": likes_count,
             "watched": watched_count,

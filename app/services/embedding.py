@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import math
+from collections import OrderedDict
 from functools import lru_cache
+from time import monotonic
 from typing import Any, Protocol, Sequence
 
 import httpx
@@ -107,6 +110,8 @@ class EmbeddingService:
         dimensions: int,
         batch_size: int = 32,
         query_prefix: str = "",
+        query_cache_size: int = 512,
+        query_cache_ttl_seconds: float = 600,
     ) -> None:
         if dimensions <= 0:
             raise ValueError("Embedding dimensions must be positive.")
@@ -117,12 +122,62 @@ class EmbeddingService:
         self.dimensions = dimensions
         self.batch_size = batch_size
         self.query_prefix = query_prefix
+        self.query_cache_size = max(0, query_cache_size)
+        self.query_cache_ttl_seconds = max(0.0, query_cache_ttl_seconds)
+        self._query_cache: OrderedDict[str, tuple[float, list[float]]] = OrderedDict()
+        self._query_inflight: dict[str, asyncio.Task[list[list[float]]]] = {}
+        self._query_cache_lock = asyncio.Lock()
+        self._query_cache_hits = 0
+        self._query_cache_misses = 0
+        self._query_cache_evictions = 0
+        self._query_cache_coalesced = 0
 
     async def embed_query(self, text: str) -> list[float]:
         if not text.strip():
             raise EmbeddingProviderError("The embedding query cannot be empty.")
         prepared = f"{self.query_prefix}{text}" if self.query_prefix else text
-        return (await self._embed_many([prepared]))[0]
+        if self.query_cache_size == 0 or self.query_cache_ttl_seconds == 0:
+            return (await self._embed_many([prepared]))[0]
+
+        now = monotonic()
+        async with self._query_cache_lock:
+            cached = self._query_cache.get(prepared)
+            if cached is not None:
+                expires_at, vector = cached
+                if expires_at > now:
+                    self._query_cache.move_to_end(prepared)
+                    self._query_cache_hits += 1
+                    return list(vector)
+                del self._query_cache[prepared]
+
+            task = self._query_inflight.get(prepared)
+            if task is None:
+                task = asyncio.create_task(self._embed_many([prepared]))
+                self._query_inflight[prepared] = task
+                self._query_cache_misses += 1
+            else:
+                self._query_cache_coalesced += 1
+
+        try:
+            vector = (await task)[0]
+        except BaseException:
+            async with self._query_cache_lock:
+                if self._query_inflight.get(prepared) is task:
+                    del self._query_inflight[prepared]
+            raise
+
+        async with self._query_cache_lock:
+            if prepared not in self._query_cache:
+                self._query_cache[prepared] = (
+                    monotonic() + self.query_cache_ttl_seconds,
+                    list(vector),
+                )
+                while len(self._query_cache) > self.query_cache_size:
+                    self._query_cache.popitem(last=False)
+                    self._query_cache_evictions += 1
+            if self._query_inflight.get(prepared) is task:
+                del self._query_inflight[prepared]
+        return list(vector)
 
     async def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
         if any(not text.strip() for text in texts):
@@ -135,10 +190,30 @@ class EmbeddingService:
     async def health(self) -> dict[str, Any]:
         result = await self.provider.health()
         result["embedding_dimensions"] = self.dimensions
+        result["query_cache"] = self.query_cache_info()
         return result
 
     async def close(self) -> None:
+        async with self._query_cache_lock:
+            tasks = list(self._query_inflight.values())
+            self._query_inflight.clear()
+            self._query_cache.clear()
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
         await self.provider.close()
+
+    def query_cache_info(self) -> dict[str, int | float]:
+        return {
+            "size": len(self._query_cache),
+            "max_size": self.query_cache_size,
+            "ttl_seconds": self.query_cache_ttl_seconds,
+            "hits": self._query_cache_hits,
+            "misses": self._query_cache_misses,
+            "evictions": self._query_cache_evictions,
+            "coalesced": self._query_cache_coalesced,
+        }
 
     async def _embed_many(self, texts: list[str]) -> list[list[float]]:
         results: list[list[float]] = []
@@ -185,6 +260,8 @@ def create_embedding_service() -> EmbeddingService:
         dimensions=settings.EMBEDDING_DIMENSIONS,
         batch_size=settings.EMBEDDING_BATCH_SIZE,
         query_prefix=settings.EMBEDDING_QUERY_PREFIX,
+        query_cache_size=settings.EMBEDDING_QUERY_CACHE_SIZE,
+        query_cache_ttl_seconds=settings.EMBEDDING_QUERY_CACHE_TTL_SECONDS,
     )
 
 
