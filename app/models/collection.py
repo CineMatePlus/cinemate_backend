@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
 from app.models.movie import MovieResponse
 from app.models.pyobjectid import PyObjectId
 
@@ -30,23 +32,23 @@ class CollectionUpdate(BaseModel):
 class CollectionInDB(CollectionBase):
     """Veritabanı koleksiyon modeli"""
 
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        json_encoders={PyObjectId: str, datetime: lambda v: v.isoformat()},
+    )
+
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     user_id: PyObjectId
     movie_ids: List[PyObjectId] = []
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {PyObjectId: str, datetime: lambda v: v.isoformat()}
-
 
 class CollectionResponse(CollectionInDB):
     """Koleksiyon yanıt modeli"""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     owner_name: str
     movie_count: int = 0
-
-    class Config:
-        allow_population_by_field_name = True

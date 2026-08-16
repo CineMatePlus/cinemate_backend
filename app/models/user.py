@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, Literal, List
 from datetime import datetime
 from enum import IntEnum
+from typing import List, Literal, Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class Gender(IntEnum):
@@ -12,6 +13,7 @@ class Gender(IntEnum):
     - 1: Erkek (Male)
     - 2: Diğer (Other)
     """
+
     FEMALE = 0
     MALE = 1
     OTHER = 2
@@ -33,31 +35,27 @@ class UserUpdate(BaseModel):
 
 
 class UserInDB(UserBase):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_encoders={datetime: lambda dt: dt.isoformat(), IntEnum: lambda v: int(v)},
+    )
+
     id: str = Field(alias="_id")
     hashed_password: str
     embedding: Optional[List[float]] = None
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        allow_population_by_field_name = True
-        json_encoders = {
-            datetime: lambda dt: dt.isoformat(),
-            IntEnum: lambda v: int(v)
-        }
-
 
 class UserResponse(UserBase):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_encoders={datetime: lambda v: v.isoformat(), IntEnum: lambda v: int(v)},
+    )
+
     id: str = Field(..., alias="_id")
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        allow_population_by_field_name = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat(),
-            IntEnum: lambda v: int(v)
-        }
 
 
 class SimilarUserResponse(UserResponse):

@@ -7,30 +7,27 @@ CineMate'in kimlik doğrulama, içerik, koleksiyon, yorum, kullanıcı etkileşi
 - Python 3.10 veya üzeri
 - Poetry 2.x
 - Docker Desktop (MongoDB Atlas Local ve Vector Search için)
-- BGE-M3 modelini ilk kullanımda indirebilmek için internet bağlantısı
+- [Ollama](https://ollama.com/) ve `qwen3-embedding:0.6b` modeli
 
 MongoDB Atlas Local sayesinde CRUD ve Vector Search özelliklerinin tamamı yerelde çalışır.
 
 ## 1. Bağımlılıkları kurma
 
-CPU kurulumu varsayılandır ve NVIDIA ekran kartı gerektirmez:
+Backend yalnızca platform bağımsız HTTP istemcisini kurar; PyTorch, CUDA veya
+Sentence Transformers içermez:
 
 ```powershell
 poetry install
 ```
 
-NVIDIA GPU ve CUDA 12.8 uyumlu sürücü bulunan bir sistemde, CPU paketlerini aynı sürümlerin CUDA wheel'leriyle değiştirin:
+Embedding runtime'ını ve modeli hazırlayın:
 
 ```powershell
-poetry install
-poetry run pip install --force-reinstall torch==2.7.1+cu128 torchvision==0.22.1+cu128 numpy==1.26.4 --index-url https://download.pytorch.org/whl/cu128
+ollama pull qwen3-embedding:0.6b
 ```
 
-Poetry kilit dosyası taşınabilirlik için CPU profilini sabitler; CUDA değişimi aynı PyTorch/Torchvision sürümlerini kullanır. Daha sonra tekrar `poetry install` çalıştırmak ortamı kilitli CPU profiline döndürür. Kurulumu doğrulamak için:
-
-```powershell
-poetry run python -c "import torch; print(torch.__version__); print('CUDA:', torch.cuda.is_available())"
-```
+Ollama Windows ve Linux'ta desteklenen NVIDIA/AMD GPU'yu, Apple Silicon'da
+Metal'i otomatik kullanır; uygun hızlandırıcı yoksa CPU'ya düşer.
 
 ## 2. Ortam ayarları
 
@@ -44,6 +41,8 @@ Copy-Item .env.example .env
 MONGODB_URL=mongodb://localhost:27018/?directConnection=true
 MONGODB_DB=cinemate
 JWT_SECRET_KEY=replace-with-a-random-secret
+EMBEDDING_BASE_URL=http://localhost:11434
+EMBEDDING_MODEL=qwen3-embedding:0.6b
 ```
 
 Güvenli bir JWT anahtarı üretmek için:
@@ -62,27 +61,35 @@ docker compose up -d
 
 ## 3. Örnek film verisini yükleme
 
-Repo, üçüncü taraf veri lisansına bağlı olmayan sekiz sentetik film içeren `data/sample_movies.csv` dosyasını içerir. Dosyayı ve komutu veritabanına bağlanmadan doğrulayabilirsiniz:
+Eski migration kaynağındaki 999 filmi doğrulamak için:
 
 ```powershell
-poetry run python scripts/seed_movies.py --dry-run
+poetry run python scripts/seed_movies.py --csv app/ai/control/first_hundred.csv --dry-run
 ```
 
-Temel ekranları yerel MongoDB ile denemek ve BGE-M3 indirmemek için:
+Filmleri Qwen3 embedding'leriyle veritabanına yazmak için:
 
 ```powershell
-poetry run python scripts/seed_movies.py --skip-embeddings
+poetry run python scripts/seed_movies.py --csv app/ai/control/first_hundred.csv
 ```
 
-Vektör arama ve önerilerde kullanılacak 1024 boyutlu embedding'leri de üretmek için:
+Importer `id` tabanlı eski CSV şemasını otomatik algılar; sayısal alanları, tarihi
+ve virgülle ayrılmış liste sütunlarını eski migration ile aynı veri tiplerine
+dönüştürür. Metinler Ollama'ya batch halinde gönderilir ve 1024 boyutlu
+embedding her film kaydına eklenir.
+
+Yalnızca sekiz sentetik örnek filmi kullanmak isterseniz:
 
 ```powershell
-poetry run python scripts/seed_movies.py
+poetry run python scripts/seed_movies.py --csv data/sample_movies.csv
 ```
 
-İlk embedding işlemi `BAAI/bge-m3` modelini Hugging Face üzerinden indirir ve yerel model önbelleğine kaydeder. Sonraki çalıştırmalar önbelleği kullanır. CUDA profili kuruluysa `--device cuda`, CPU'yu zorlamak için `--device cpu` kullanılabilir.
+Embedding olmadan yalnızca içerikleri yüklemek için herhangi bir CSV komutuna
+`--skip-embeddings` ekleyebilirsiniz.
 
-Seed komutu `seed_id` üzerinden upsert yaptığı için güvenle tekrar çalıştırılabilir. `--reset` yalnızca bu örnek seed tarafından oluşturulmuş kayıtları siler. Ayrıntılar ve kendi lisanslı CSV dosyanızı kullanma biçimi için [`docs/data-seeding.md`](docs/data-seeding.md) dosyasına bakın.
+Import komutu eski CSV'de `id`, örnek CSV'de `seed_id` üzerinden upsert yaptığı
+için güvenle tekrar çalıştırılabilir. Ayrıntılar için
+[`docs/data-seeding.md`](docs/data-seeding.md) dosyasına bakın.
 
 ## 4. Vector Search indeksleri
 
@@ -96,7 +103,7 @@ Script aşağıdaki 1024 boyutlu cosine indekslerini oluşturur:
 
 | Koleksiyon | İndeks | Alan |
 | --- | --- | --- |
-| `movies` | `vector_index` | `embedding` |
+| `movies` | `movie_vector_index` | `embedding` |
 | `users` | `user_vector_index` | `embedding` |
 
 İndekslerin durumu `READY` olana kadar vektör sorgularını çalıştırmayın. Yerel ve Atlas kurulum adımları için [`docs/atlas-vector-search.md`](docs/atlas-vector-search.md) dosyasını kullanın.
@@ -113,7 +120,14 @@ Uygulama başladıktan sonra:
 - Swagger UI: `http://localhost:8000/api/v1/docs`
 - ReDoc: `http://localhost:8000/api/v1/redoc`
 
-BGE-M3, API başlangıcında değil ilk embedding isteğinde belleğe yüklenir. CPU'da ilk vektör isteğinin tamamlanması GPU'ya göre daha uzun sürebilir.
+Embedding sağlık kontrolü `http://localhost:8000/health/embedding` adresindedir.
+`EMBEDDING_WARMUP=true` ayarlanırsa API başlangıçta bir deneme embedding'i üretir
+ve Ollama/model hazır değilse başlangıcı durdurur. Varsayılan `false` olduğundan
+embedding servisi kapalıyken CRUD endpoint'leri çalışmaya devam eder.
+
+Backend Docker içinde, Ollama host işletim sisteminde çalışıyorsa
+`EMBEDDING_BASE_URL=http://host.docker.internal:11434` kullanın. Apple Silicon'da
+Metal hızlandırmasını korumak için Ollama'nın host üzerinde native çalışması önerilir.
 
 ## Testler
 
@@ -121,6 +135,12 @@ Davranış testleri çalışan bir MongoDB örneği kullanır:
 
 ```powershell
 poetry run behave tests/features
+```
+
+Embedding birim testleri Ollama veya MongoDB gerektirmez:
+
+```powershell
+poetry run python -m unittest discover -s tests/unit -v
 ```
 
 `run.bat`, Behave sonuçlarını Allure raporuna dönüştürmek için kullanılır ve sistemde Allure CLI bulunmasını bekler.

@@ -8,7 +8,8 @@ CineMate iki Vector Search indeksini sabit adlarla kullanır. Normal MongoDB `cr
 - `.env` içinde Atlas Local veya Atlas bağlantı URI'si
 - `movies` kayıtlarında 1024 boyutlu `embedding` dizileri
 
-`BAAI/bge-m3` modelinin dense embedding boyutu 1024'tür. Bu nedenle hem film hem kullanıcı indeksleri aynı boyutu kullanır.
+Varsayılan `qwen3-embedding:0.6b` modelinin embedding boyutu 1024'tür. Film ve
+kullanıcı koleksiyonlarındaki vektör indeksleri bu boyutu kullanır.
 
 ## Lokal ortam ayarı
 
@@ -25,15 +26,6 @@ Mevcut Windows MongoDB servisi `27017` portunda kalabilir. Atlas Local host üze
 MONGODB_URL=mongodb://localhost:27018/?directConnection=true
 MONGODB_DB=cinemate
 ```
-
-Mevcut `cinemate` verisini taşımak gerekiyorsa MongoDB Database Tools kurulu bir terminalde çalıştırın:
-
-```powershell
-mongodump --uri="mongodb://localhost:27017/cinemate" --archive=cinemate.archive
-mongorestore --uri="mongodb://localhost:27018/cinemate?directConnection=true" --archive=cinemate.archive
-```
-
-Arşivi ve eski MongoDB servisini, yeni ortamı doğrulamadan silmeyin.
 
 ## Atlas ortam ayarı
 
@@ -60,7 +52,8 @@ Ardından indeksleri oluşturun:
 poetry run python scripts/create_vector_indexes.py
 ```
 
-Script aşağıdaki tanımı `movies.vector_index` ve `users.user_vector_index` için uygular:
+Script varsayılan olarak `movies.movie_vector_index` ve
+`users.user_vector_index` indekslerine aşağıdaki alanı uygular:
 
 ```json
 {
@@ -81,7 +74,7 @@ Script tekrar çalıştırıldığında aynı isimdeki mevcut indeksleri atlar. 
 
 | İndeks | Kullanan özellikler |
 | --- | --- |
-| `movies.vector_index` | Metinle film arama, benzer filmler, koleksiyon ve kullanıcı listesi önerileri |
+| `movies.movie_vector_index` | Metinle film arama, benzer filmler, koleksiyon ve kullanıcı listesi önerileri |
 | `users.user_vector_index` | Benzer zevke sahip kullanıcılar |
 
 ## Hata giderme
@@ -89,6 +82,6 @@ Script tekrar çalıştırıldığında aynı isimdeki mevcut indeksleri atlar. 
 - `CommandNotSupported` veya benzeri bir hata, bağlantının Atlas Local yerine standart MongoDB servisine (`27017`) gittiğini gösterebilir.
 - `index not found`, indeks adının kodla aynı olmadığını veya oluşturma işleminin henüz tamamlanmadığını gösterir.
 - Boyut uyuşmazlığı hatasında film ve kullanıcı embedding'lerinin 1024 değer içerdiğini doğrulayın.
-- Boş sonuçlarda önce filmlerin `embedding` alanıyla seed edildiğini kontrol edin.
+- Boş sonuçlarda önce filmlerde 1024 boyutlu `embedding` alanı bulunduğunu kontrol edin.
 
-Başvuru kaynakları: [MongoDB `createSearchIndex` belgeleri](https://www.mongodb.com/docs/v8.0/reference/method/db.collection.createsearchindex/), [MongoDB Vector Search indeks alanları](https://www.mongodb.com/docs/atlas/atlas-search/field-types/vector-type/) ve [BGE-M3 model kartı](https://huggingface.co/BAAI/bge-m3).
+Başvuru kaynakları: [MongoDB `createSearchIndex` belgeleri](https://www.mongodb.com/docs/v8.0/reference/method/db.collection.createsearchindex/), [MongoDB Vector Search indeks alanları](https://www.mongodb.com/docs/atlas/atlas-search/field-types/vector-type/) ve [Qwen3 Embedding](https://github.com/QwenLM/Qwen3-Embedding).

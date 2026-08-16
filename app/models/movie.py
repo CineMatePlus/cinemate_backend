@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-from datetime import datetime, date
+from datetime import date, datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MovieBase(BaseModel):
@@ -65,26 +66,28 @@ class MovieUpdate(BaseModel):
 
 
 class MovieInDB(MovieBase):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_encoders={
+            datetime: lambda v: v.isoformat(),
+            date: lambda v: v.isoformat(),
+        },
+    )
+
     id: str = Field(..., alias="_id")
     embedding: Optional[List[float]] = None
 
-    class Config:
-        allow_population_by_field_name = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat(),
-            date: lambda v: v.isoformat()
-        }
-
 
 class MovieResponse(MovieBase):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_encoders={
+            datetime: lambda v: v.isoformat(),
+            date: lambda v: v.isoformat(),
+        },
+    )
+
     id: str = Field(..., alias="_id")
     is_liked: bool = False
     is_watched: bool = False
     is_in_watchlist: bool = False
-
-    class Config:
-        allow_population_by_field_name = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat(),
-            date: lambda v: v.isoformat()
-        }

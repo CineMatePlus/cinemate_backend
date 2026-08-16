@@ -1,11 +1,15 @@
-from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
 from bson import ObjectId
+from pydantic import BaseModel, ConfigDict, Field
+
 from .pyobjectid import PyObjectId
 
 
 class InteractionBase(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     user_id: PyObjectId = Field(...)
     movie_id: PyObjectId = Field(...)
     interaction_type: str = Field(
@@ -16,18 +20,13 @@ class InteractionBase(BaseModel):
         None, description="Eğer interaction_type 'collection_add' ise zorunludur"
     )
 
-    class Config:
-        arbitrary_types_allowed = True
-
 
 class InteractionCreate(InteractionBase):
     pass
 
 
 class InteractionInDB(InteractionBase):
+    model_config = ConfigDict(populate_by_name=True, json_encoders={ObjectId: str})
+
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     created_at: datetime
-
-    class Config:
-        allow_population_by_field_name = True
-        json_encoders = {ObjectId: str}

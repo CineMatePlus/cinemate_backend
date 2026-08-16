@@ -1,236 +1,254 @@
-from bson import ObjectId
 from typing import List, Optional
-from app.db.mongodb import get_database
-from app.models.movie import MovieResponse, MovieInDB
-from app.models.interaction import InteractionInDB
+
+from bson import ObjectId
 from fastapi import HTTPException
-from app.services.ai import AIService
-import numpy as np
+
+from app.core.config import settings
+from app.db.mongodb import get_database
+from app.models.interaction import InteractionInDB
+from app.models.movie import MovieInDB, MovieResponse
+from app.services.vector_math import average_vectors
 
 db = get_database()
 
 
 class MovieService:
     @staticmethod
-    async def get_movies(user_id: Optional[str] = None, skip: int = 0, limit: int = 20) -> List[MovieResponse]:
-        pipeline = [
-            {"$skip": skip},
-            {"$limit": limit}
-        ]
+    async def get_movies(
+        user_id: Optional[str] = None, skip: int = 0, limit: int = 20
+    ) -> List[MovieResponse]:
+        pipeline = [{"$skip": skip}, {"$limit": limit}]
 
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
-        
+
         # Convert _id to string for Pydantic compatibility
-        pipeline.extend([
-            {"$addFields": {"_id": {"$toString": "$_id"}}},
-            {"$addFields": {"title": {"$toString": "$title"}}},
-            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-            {"$addFields": {
-                "production_companies": {
-                    "$map": {
-                        "input": "$production_companies",
-                        "as": "pc",
-                        "in": {"$toString": "$$pc"}
+        pipeline.extend(
+            [
+                {"$addFields": {"_id": {"$toString": "$_id"}}},
+                {"$addFields": {"title": {"$toString": "$title"}}},
+                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+                {
+                    "$addFields": {
+                        "production_companies": {
+                            "$map": {
+                                "input": "$production_companies",
+                                "as": "pc",
+                                "in": {"$toString": "$$pc"},
+                            }
+                        }
                     }
-                }
-            }}
-        ])
+                },
+            ]
+        )
 
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=limit)
         return [MovieResponse(**movie) for movie in movies]
 
     @staticmethod
-    async def get_movies_by_genre(genre: str, user_id: Optional[str] = None, skip: int = 0, limit: int = 20) -> List[MovieResponse]:
-        pipeline = [
-            {"$match": {"genres": genre}},
-            {"$skip": skip},
-            {"$limit": limit}
-        ]
+    async def get_movies_by_genre(
+        genre: str, user_id: Optional[str] = None, skip: int = 0, limit: int = 20
+    ) -> List[MovieResponse]:
+        pipeline = [{"$match": {"genres": genre}}, {"$skip": skip}, {"$limit": limit}]
 
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
-        
-        pipeline.extend([
-            {"$addFields": {"_id": {"$toString": "$_id"}}},
-            {"$addFields": {"title": {"$toString": "$title"}}},
-            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-            {"$addFields": {
-                "production_companies": {
-                    "$map": {
-                        "input": "$production_companies",
-                        "as": "pc",
-                        "in": {"$toString": "$$pc"}
+
+        pipeline.extend(
+            [
+                {"$addFields": {"_id": {"$toString": "$_id"}}},
+                {"$addFields": {"title": {"$toString": "$title"}}},
+                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+                {
+                    "$addFields": {
+                        "production_companies": {
+                            "$map": {
+                                "input": "$production_companies",
+                                "as": "pc",
+                                "in": {"$toString": "$$pc"},
+                            }
+                        }
                     }
-                }
-            }}
-        ])
+                },
+            ]
+        )
 
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=limit)
         return [MovieResponse(**movie) for movie in movies]
 
     @staticmethod
-    async def get_movie_by_id(movie_id: str, user_id: Optional[str] = None) -> MovieResponse:
+    async def get_movie_by_id(
+        movie_id: str, user_id: Optional[str] = None
+    ) -> MovieResponse:
         if not ObjectId.is_valid(movie_id):
             raise HTTPException(status_code=400, detail="Invalid movie ID format")
 
-        pipeline = [
-            {"$match": {"_id": ObjectId(movie_id)}}
-        ]
+        pipeline = [{"$match": {"_id": ObjectId(movie_id)}}]
 
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
-        
+
         # Convert _id to string for Pydantic compatibility
-        pipeline.extend([
-            {"$addFields": {"_id": {"$toString": "$_id"}}},
-            {"$addFields": {"title": {"$toString": "$title"}}},
-            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-            {"$addFields": {
-                "production_companies": {
-                    "$map": {
-                        "input": "$production_companies",
-                        "as": "pc",
-                        "in": {"$toString": "$$pc"}
+        pipeline.extend(
+            [
+                {"$addFields": {"_id": {"$toString": "$_id"}}},
+                {"$addFields": {"title": {"$toString": "$title"}}},
+                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+                {
+                    "$addFields": {
+                        "production_companies": {
+                            "$map": {
+                                "input": "$production_companies",
+                                "as": "pc",
+                                "in": {"$toString": "$$pc"},
+                            }
+                        }
                     }
-                }
-            }}
-        ])
+                },
+            ]
+        )
 
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=1)
 
         if not movies:
             raise HTTPException(status_code=404, detail="Movie not found")
-        
+
         return MovieResponse(**movies[0])
 
     @staticmethod
-    async def search_movies_by_vector(embedding: List[float], user_id: Optional[str] = None, limit: int = 10) -> List[MovieResponse]:
-        # Note: A vector search index named 'vector_index' must be created on the 'movies' collection in MongoDB Atlas.
-        # The index should be on the 'embedding' field.
+    async def search_movies_by_vector(
+        embedding: List[float], user_id: Optional[str] = None, limit: int = 10
+    ) -> List[MovieResponse]:
+        # The configured Atlas/Atlas Local vector index targets the embedding field.
         pipeline = [
             {
                 "$vectorSearch": {
-                    "index": "vector_index",
+                    "index": settings.MOVIE_VECTOR_INDEX,
                     "path": "embedding",
                     "queryVector": embedding,
                     "numCandidates": 150,
-                    "limit": limit
+                    "limit": limit,
                 }
             },
-            {
-                "$addFields": {
-                    "similarity_score": { "$meta": "vectorSearchScore" }
-                }
-            }
+            {"$addFields": {"similarity_score": {"$meta": "vectorSearchScore"}}},
         ]
-        
+
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        pipeline.extend([
-            {"$addFields": {"_id": {"$toString": "$_id"}}},
-            {"$addFields": {"title": {"$toString": "$title"}}},
-            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-            {"$addFields": {
-                "production_companies": {
-                    "$map": {
-                        "input": "$production_companies",
-                        "as": "pc",
-                        "in": {"$toString": "$$pc"}
+        pipeline.extend(
+            [
+                {"$addFields": {"_id": {"$toString": "$_id"}}},
+                {"$addFields": {"title": {"$toString": "$title"}}},
+                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+                {
+                    "$addFields": {
+                        "production_companies": {
+                            "$map": {
+                                "input": "$production_companies",
+                                "as": "pc",
+                                "in": {"$toString": "$$pc"},
+                            }
+                        }
                     }
-                }
-            }}
-        ])
-        
+                },
+            ]
+        )
+
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=limit)
 
         print("\n--- Text Search Results ---")
         for movie in movies:
-            score = movie.get('similarity_score', 'N/A')
-            print(f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}")
+            score = movie.get("similarity_score", "N/A")
+            print(
+                f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}"
+            )
         print("---------------------------\n")
 
         return [MovieResponse(**movie) for movie in movies]
 
     @staticmethod
-    async def get_recommendations_from_movie_ids(movie_ids: List[str], user_id: Optional[str] = None, limit: int = 10) -> List[MovieResponse]:
+    async def get_recommendations_from_movie_ids(
+        movie_ids: List[str], user_id: Optional[str] = None, limit: int = 10
+    ) -> List[MovieResponse]:
         if not movie_ids:
             return []
 
         object_ids = [ObjectId(id) for id in movie_ids if ObjectId.is_valid(id)]
-        
+
         movies_cursor = db.movies.find(
             {"_id": {"$in": object_ids}, "embedding": {"$exists": True}},
-            {"embedding": 1}
+            {"embedding": 1},
         )
-        embeddings = [movie["embedding"] for movie in await movies_cursor.to_list(length=None)]
+        embeddings = [
+            movie["embedding"] for movie in await movies_cursor.to_list(length=None)
+        ]
 
         if not embeddings:
             return []
 
         # Calculate the average embedding vector
-        average_embedding = np.mean(embeddings, axis=0).tolist()
+        average_embedding = average_vectors(embeddings)
 
         # Find movies similar to the average embedding, excluding the ones already in the list
         pipeline = [
             {
                 "$vectorSearch": {
-                    "index": "vector_index",
+                    "index": settings.MOVIE_VECTOR_INDEX,
                     "path": "embedding",
                     "queryVector": average_embedding,
                     "numCandidates": 150,
-                    "limit": limit + len(object_ids) 
+                    "limit": limit + len(object_ids),
                 }
             },
-            {
-                "$addFields": {
-                    "similarity_score": { "$meta": "vectorSearchScore" }
-                }
-            },
-            {
-                "$match": {
-                    "_id": {"$nin": object_ids}
-                }
-            },
-            {"$limit": limit}
+            {"$addFields": {"similarity_score": {"$meta": "vectorSearchScore"}}},
+            {"$match": {"_id": {"$nin": object_ids}}},
+            {"$limit": limit},
         ]
 
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        pipeline.extend([
-            {"$addFields": {"_id": {"$toString": "$_id"}}},
-            {"$addFields": {"title": {"$toString": "$title"}}},
-            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-            {"$addFields": {
-                "production_companies": {
-                    "$map": {
-                        "input": "$production_companies",
-                        "as": "pc",
-                        "in": {"$toString": "$$pc"}
+        pipeline.extend(
+            [
+                {"$addFields": {"_id": {"$toString": "$_id"}}},
+                {"$addFields": {"title": {"$toString": "$title"}}},
+                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+                {
+                    "$addFields": {
+                        "production_companies": {
+                            "$map": {
+                                "input": "$production_companies",
+                                "as": "pc",
+                                "in": {"$toString": "$$pc"},
+                            }
+                        }
                     }
-                }
-            }}
-        ])
-        
+                },
+            ]
+        )
+
         similar_movies_cursor = db.movies.aggregate(pipeline)
         similar_movies = await similar_movies_cursor.to_list(length=limit)
-        
+
         print("\n--- List Recommendation Results ---")
         for movie in similar_movies:
-            score = movie.get('similarity_score', 'N/A')
-            print(f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}")
+            score = movie.get("similarity_score", "N/A")
+            print(
+                f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}"
+            )
         print("-----------------------------------\n")
 
         return [MovieResponse(**movie) for movie in similar_movies]
 
     @staticmethod
-    async def get_similar_movies(movie_id: str, user_id: Optional[str] = None) -> List[MovieResponse]:
+    async def get_similar_movies(
+        movie_id: str, user_id: Optional[str] = None
+    ) -> List[MovieResponse]:
         if not ObjectId.is_valid(movie_id):
             raise HTTPException(status_code=400, detail="Invalid movie ID format")
 
@@ -240,63 +258,62 @@ class MovieService:
 
         # Convert the _id from ObjectId to string before passing to Pydantic model
         target_movie["_id"] = str(target_movie["_id"])
-        
+
         target_movie_model = MovieInDB(**target_movie)
 
         embedding = target_movie_model.embedding
         if not embedding:
-            raise HTTPException(status_code=404, detail="Embeddings for the target movie not found.")
+            raise HTTPException(
+                status_code=404, detail="Embeddings for the target movie not found."
+            )
 
-        # Note: A vector search index named 'vector_index' must be created on the 'movies' collection in MongoDB Atlas.
-        # The index should be on the 'embedding' field.
+        # The configured Atlas/Atlas Local vector index targets the embedding field.
         pipeline = [
             {
                 "$vectorSearch": {
-                    "index": "vector_index",
+                    "index": settings.MOVIE_VECTOR_INDEX,
                     "path": "embedding",
                     "queryVector": embedding,
                     "numCandidates": 150,
-                    "limit": 11 # 10 similar + the movie itself
+                    "limit": 11,  # 10 similar + the movie itself
                 }
             },
-            {
-                "$addFields": {
-                    "similarity_score": { "$meta": "vectorSearchScore" }
-                }
-            },
-            {
-                "$match": {
-                    "_id": {"$ne": ObjectId(movie_id)}
-                }
-            },
-            {"$limit": 10}
+            {"$addFields": {"similarity_score": {"$meta": "vectorSearchScore"}}},
+            {"$match": {"_id": {"$ne": ObjectId(movie_id)}}},
+            {"$limit": 10},
         ]
-        
+
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
 
-        pipeline.extend([
-            {"$addFields": {"_id": {"$toString": "$_id"}}},
-            {"$addFields": {"title": {"$toString": "$title"}}},
-            {"$addFields": {"original_title": {"$toString": "$original_title"}}},
-            {"$addFields": {
-                "production_companies": {
-                    "$map": {
-                        "input": "$production_companies",
-                        "as": "pc",
-                        "in": {"$toString": "$$pc"}
+        pipeline.extend(
+            [
+                {"$addFields": {"_id": {"$toString": "$_id"}}},
+                {"$addFields": {"title": {"$toString": "$title"}}},
+                {"$addFields": {"original_title": {"$toString": "$original_title"}}},
+                {
+                    "$addFields": {
+                        "production_companies": {
+                            "$map": {
+                                "input": "$production_companies",
+                                "as": "pc",
+                                "in": {"$toString": "$$pc"},
+                            }
+                        }
                     }
-                }
-            }}
-        ])
-        
+                },
+            ]
+        )
+
         movies_cursor = db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=10)
 
         print(f"\n--- Similar Movies for '{target_movie.get('title')}' ---")
         for movie in movies:
-            score = movie.get('similarity_score', 'N/A')
-            print(f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}")
+            score = movie.get("similarity_score", "N/A")
+            print(
+                f"Movie: {movie.get('title', 'Unknown')}, Similarity Score: {score:.4f}"
+            )
         print("------------------------------------------\n")
 
         return [MovieResponse(**movie) for movie in movies]
@@ -344,7 +361,12 @@ class MovieService:
                                 "$map": {
                                     "input": "$user_interactions",
                                     "as": "interaction",
-                                    "in": {"$eq": ["$$interaction.interaction_type", "like"]},
+                                    "in": {
+                                        "$eq": [
+                                            "$$interaction.interaction_type",
+                                            "like",
+                                        ]
+                                    },
                                 }
                             }
                         ]
@@ -355,7 +377,12 @@ class MovieService:
                                 "$map": {
                                     "input": "$user_interactions",
                                     "as": "interaction",
-                                    "in": {"$eq": ["$$interaction.interaction_type", "watched"]},
+                                    "in": {
+                                        "$eq": [
+                                            "$$interaction.interaction_type",
+                                            "watched",
+                                        ]
+                                    },
                                 }
                             }
                         ]
@@ -366,7 +393,12 @@ class MovieService:
                                 "$map": {
                                     "input": "$user_interactions",
                                     "as": "interaction",
-                                    "in": {"$eq": ["$$interaction.interaction_type", "watchlist"]},
+                                    "in": {
+                                        "$eq": [
+                                            "$$interaction.interaction_type",
+                                            "watchlist",
+                                        ]
+                                    },
                                 }
                             }
                         ]
@@ -374,4 +406,4 @@ class MovieService:
                 },
             },
             {"$project": {"user_interactions": 0}},
-        ] 
+        ]

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -13,17 +14,21 @@ from pymongo import MongoClient
 from pymongo.operations import SearchIndexModel
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-EMBEDDING_DIMENSIONS = 1024
+sys.path.insert(0, str(PROJECT_ROOT))
+load_dotenv(PROJECT_ROOT / ".env")
+
+from app.core.config import settings  # noqa: E402
+
 INDEXES = (
-    ("movies", "vector_index"),
-    ("users", "user_vector_index"),
+    ("movies", settings.MOVIE_VECTOR_INDEX),
+    ("users", settings.USER_VECTOR_INDEX),
 )
 DEFINITION: dict[str, Any] = {
     "fields": [
         {
             "type": "vector",
             "path": "embedding",
-            "numDimensions": EMBEDDING_DIMENSIONS,
+            "numDimensions": settings.EMBEDDING_DIMENSIONS,
             "similarity": "cosine",
         }
     ]

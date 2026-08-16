@@ -1,38 +1,66 @@
+import os
 from typing import List
-from dotenv import load_dotenv, dotenv_values
+
+from dotenv import load_dotenv
 
 # .env dosyasını yükle
 load_dotenv()
-env = dotenv_values()
+
+
+def get_env(name: str, default: str) -> str:
+    """Read settings from the process environment after loading .env defaults."""
+    return os.getenv(name, default)
+
+
+def get_bool_env(name: str, default: bool = False) -> bool:
+    value = get_env(name, str(default)).strip().lower()
+    return value in {"1", "true", "yes", "on"}
 
 
 class Settings:
     # Proje Bilgileri
-    PROJECT_NAME: str = env.get("PROJECT_NAME", "Cinemate API")
-    PROJECT_DESCRIPTION: str = env.get(
+    PROJECT_NAME: str = get_env("PROJECT_NAME", "Cinemate API")
+    PROJECT_DESCRIPTION: str = get_env(
         "PROJECT_DESCRIPTION", "Cinemate API Documentation"
     )
-    PROJECT_VERSION: str = env.get("PROJECT_VERSION", "1.0.0")
-    API_V1_STR: str = env.get("API_V1_STR", "/api/v1")
+    PROJECT_VERSION: str = get_env("PROJECT_VERSION", "1.0.0")
+    API_V1_STR: str = get_env("API_V1_STR", "/api/v1")
 
     # CORS Ayarları
     CORS_ORIGINS: List[str] = [
-        i.strip() for i in env.get("CORS_ORIGINS", "*").split(",")
+        i.strip() for i in get_env("CORS_ORIGINS", "*").split(",")
     ]
 
     # MongoDB Ayarları
-    MONGODB_URL: str = env.get("MONGODB_URL", "mongodb://localhost:27017")
-    MONGODB_DB: str = env.get("MONGODB_DB", "cinemate")
+    MONGODB_URL: str = get_env("MONGODB_URL", "mongodb://localhost:27017")
+    MONGODB_DB: str = get_env("MONGODB_DB", "cinemate")
 
     # JWT Ayarları
-    JWT_SECRET_KEY: str = env.get("JWT_SECRET_KEY", "your-secret-key")
-    JWT_ALGORITHM: str = env.get("JWT_ALGORITHM", "HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(env.get("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
-    REFRESH_TOKEN_EXPIRE_DAYS: int = int(env.get("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+    JWT_SECRET_KEY: str = get_env("JWT_SECRET_KEY", "your-secret-key")
+    JWT_ALGORITHM: str = get_env("JWT_ALGORITHM", "HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(get_env("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+    REFRESH_TOKEN_EXPIRE_DAYS: int = int(get_env("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
     # Güvenlik Ayarları
-    PASSWORD_MIN_LENGTH: int = int(env.get("PASSWORD_MIN_LENGTH", "8"))
-    PASSWORD_MAX_LENGTH: int = int(env.get("PASSWORD_MAX_LENGTH", "32"))
+    PASSWORD_MIN_LENGTH: int = int(get_env("PASSWORD_MIN_LENGTH", "8"))
+    PASSWORD_MAX_LENGTH: int = int(get_env("PASSWORD_MAX_LENGTH", "32"))
+
+    # Embedding service
+    EMBEDDING_PROVIDER: str = get_env("EMBEDDING_PROVIDER", "ollama")
+    EMBEDDING_BASE_URL: str = get_env(
+        "EMBEDDING_BASE_URL", "http://localhost:11434"
+    ).rstrip("/")
+    EMBEDDING_MODEL: str = get_env("EMBEDDING_MODEL", "qwen3-embedding:0.6b")
+    EMBEDDING_DIMENSIONS: int = int(get_env("EMBEDDING_DIMENSIONS", "1024"))
+    EMBEDDING_TIMEOUT_SECONDS: float = float(get_env("EMBEDDING_TIMEOUT_SECONDS", "30"))
+    EMBEDDING_BATCH_SIZE: int = int(get_env("EMBEDDING_BATCH_SIZE", "32"))
+    EMBEDDING_WARMUP: bool = get_bool_env("EMBEDDING_WARMUP", False)
+    EMBEDDING_QUERY_PREFIX: str = get_env(
+        "EMBEDDING_QUERY_PREFIX",
+        "Instruct: Retrieve movie and TV show descriptions relevant to the user query.\\nQuery: ",
+    )
+    MOVIE_VECTOR_INDEX: str = get_env("MOVIE_VECTOR_INDEX", "movie_vector_index")
+    USER_VECTOR_INDEX: str = get_env("USER_VECTOR_INDEX", "user_vector_index")
 
 
 settings = Settings()

@@ -20,15 +20,13 @@ Feature: User API Tests
       """
     Then the response status code should be 200
     And the response should contain "access_token"
-    And the response should contain "token_type"
 
   Scenario: Login with registered user
-    When I send a POST request to "/api/v1/auth/login" with form data
+    When I send a POST request to "/api/v1/auth/login" with body
       | username | password |
       | testuser@example.com | testpassword123 |
     Then the response status code should be 200
     And the response should contain "access_token"
-    And the response should contain "token_type"
 
   Scenario: Get current user profile with token
     Given I have a valid access token

@@ -51,4 +51,4 @@ class PyObjectId(ObjectId):
             pattern="^[0-9a-f]{24}$",
             examples=["507f1f77bcf86cd799439011"],
         )
-        return json_schema 
+        return json_schema

@@ -16,6 +16,18 @@ Mobil istemcinin beklediği `vote_average`, `vote_count`, `runtime` ve dil alanl
 
 ## Komutlar
 
+Eski migration tarafından kullanılan 999 satırlık kataloğu doğrulayın:
+
+```powershell
+poetry run python scripts/seed_movies.py --csv app/ai/control/first_hundred.csv --dry-run
+```
+
+Ollama üzerinden embedding üretip MongoDB'ye aktarın:
+
+```powershell
+poetry run python scripts/seed_movies.py --csv app/ai/control/first_hundred.csv
+```
+
 CSV yapısını MongoDB veya model indirmesi olmadan doğrulayın:
 
 ```powershell
@@ -28,10 +40,11 @@ Yalnızca listeleme ve detay ekranları için embedding olmadan yükleyin:
 poetry run python scripts/seed_movies.py --skip-embeddings
 ```
 
-BGE-M3 embedding'leriyle yükleyin:
+Yapılandırılmış Ollama modeliyle embedding üreterek yükleyin:
 
 ```powershell
-poetry run python scripts/seed_movies.py --device auto
+ollama pull qwen3-embedding:0.6b
+poetry run python scripts/seed_movies.py
 ```
 
 Önceki örnek kayıtları temizleyip yeniden yükleyin:
@@ -54,8 +67,11 @@ poetry run python scripts/seed_movies.py --csv C:\data\authorized_movies.csv
 
 ## Çalışma biçimi
 
-- Kayıtlar `seed_id` üzerinden upsert edilir; komut tekrar çalıştırılabilir.
-- Embedding üretimi `BAAI/bge-m3` kullanır ve her film için 1024 değer oluşturur.
-- `--device auto`, erişilebiliyorsa CUDA'yı; aksi durumda CPU'yu seçer.
-- `--skip-embeddings`, daha önce aynı seed ile yazılmış embedding alanlarını da kaldırır.
+- Importer `first_hundred.csv` için `id`, örnek CSV için `seed_id` alanını otomatik seçer ve bu alan üzerinden upsert yapar.
+- `first_hundred.csv` içindeki virgülle ayrılmış liste alanları eski migration ile aynı şekilde Python listelerine dönüştürülür.
+- Bütçe, gelir, popülerlik, IMDb kimliği ve diğer katalog alanları korunur.
+- Embedding üretimi `.env` içindeki Ollama URL'sini ve modelini kullanır.
+- Varsayılan `qwen3-embedding:0.6b` her film için 1024 değer oluşturur.
+- Donanımı (Metal, CUDA/ROCm veya CPU) backend değil Ollama seçer.
+- `--skip-embeddings`, seed kayıtlarındaki embedding alanını kaldırır.
 - MongoDB adresi ve veritabanı adı varsayılan olarak `.env` içindeki `MONGODB_URL` ve `MONGODB_DB` değerlerinden okunur.
