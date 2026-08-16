@@ -6,10 +6,10 @@ CineMate'in kimlik doğrulama, içerik, koleksiyon, yorum, kullanıcı etkileşi
 
 - Python 3.10 veya üzeri
 - Poetry 2.x
-- MongoDB
+- Docker Desktop (MongoDB Atlas Local ve Vector Search için)
 - BGE-M3 modelini ilk kullanımda indirebilmek için internet bağlantısı
 
-Temel CRUD işlevleri yerel MongoDB ile çalışır. Metinle arama, benzer film, koleksiyon önerisi ve benzer kullanıcı özellikleri için MongoDB Atlas Vector Search gerekir.
+MongoDB Atlas Local sayesinde CRUD ve Vector Search özelliklerinin tamamı yerelde çalışır.
 
 ## 1. Bağımlılıkları kurma
 
@@ -41,7 +41,7 @@ Copy-Item .env.example .env
 `.env` içinde en azından MongoDB bağlantısını ve JWT anahtarını düzenleyin:
 
 ```dotenv
-MONGODB_URL=mongodb://localhost:27017
+MONGODB_URL=mongodb://localhost:27018/?directConnection=true
 MONGODB_DB=cinemate
 JWT_SECRET_KEY=replace-with-a-random-secret
 ```
@@ -52,7 +52,13 @@ Güvenli bir JWT anahtarı üretmek için:
 poetry run python -c "import secrets; print(secrets.token_urlsafe(64))"
 ```
 
-Tam yapay zeka özellikleri kullanılacaksa `MONGODB_URL` bir MongoDB Atlas deployment'ına işaret etmelidir.
+Atlas Local'i başlatın:
+
+```powershell
+docker compose up -d
+```
+
+`27018` portu, bilgisayarda çalışan mevcut MongoDB servisiyle çakışmaması için kullanılır.
 
 ## 3. Örnek film verisini yükleme
 
@@ -78,9 +84,9 @@ poetry run python scripts/seed_movies.py
 
 Seed komutu `seed_id` üzerinden upsert yaptığı için güvenle tekrar çalıştırılabilir. `--reset` yalnızca bu örnek seed tarafından oluşturulmuş kayıtları siler. Ayrıntılar ve kendi lisanslı CSV dosyanızı kullanma biçimi için [`docs/data-seeding.md`](docs/data-seeding.md) dosyasına bakın.
 
-## 4. Atlas Vector Search indeksleri
+## 4. Vector Search indeksleri
 
-Atlas bağlantısı `.env` içinde ayarlandıktan sonra gerekli iki indeksi oluşturun:
+Atlas Local sağlıklı duruma geldikten sonra gerekli iki indeksi oluşturun:
 
 ```powershell
 poetry run python scripts/create_vector_indexes.py
@@ -93,7 +99,7 @@ Script aşağıdaki 1024 boyutlu cosine indekslerini oluşturur:
 | `movies` | `vector_index` | `embedding` |
 | `users` | `user_vector_index` | `embedding` |
 
-Oluşturma isteği tamamlandıktan sonra Atlas arayüzünde her iki indeksin durumu `READY` olana kadar vektör sorgularını çalıştırmayın. Atlas kurulumu ve hata giderme adımları için [`docs/atlas-vector-search.md`](docs/atlas-vector-search.md) dosyasını kullanın.
+İndekslerin durumu `READY` olana kadar vektör sorgularını çalıştırmayın. Yerel ve Atlas kurulum adımları için [`docs/atlas-vector-search.md`](docs/atlas-vector-search.md) dosyasını kullanın.
 
 ## 5. API'yi çalıştırma
 
@@ -128,7 +134,7 @@ poetry run behave tests/features
 | `app/models/` | İstek, yanıt ve alan modelleri |
 | `app/db/` | MongoDB bağlantısı ve temel indeksler |
 | `data/` | Yeniden dağıtılabilir örnek veriler |
-| `scripts/` | Veri seed ve Atlas indeks araçları |
+| `scripts/` | Veri seed ve Vector Search indeks araçları |
 | `tests/` | Davranış ve servis testleri |
 | `docs/` | Backend teknik dokümantasyonu |
 

@@ -1,16 +1,41 @@
-# MongoDB Atlas Vector Search Kurulumu
+# MongoDB Vector Search Kurulumu
 
-CineMate iki Atlas Vector Search indeksini sabit adlarla kullanır. Normal MongoDB `createIndex` çağrısı embedding alanı için yeterli değildir; Atlas Search türünde bir `vectorSearch` indeksi gerekir.
+CineMate iki Vector Search indeksini sabit adlarla kullanır. Normal MongoDB `createIndex` çağrısı embedding alanı için yeterli değildir; `mongot` içeren Atlas Local veya Atlas üzerinde `vectorSearch` indeksi gerekir.
 
 ## Gereksinimler
 
-- Vector Search destekleyen bir MongoDB Atlas deployment'ı
-- `.env` içinde Atlas bağlantı URI'si
+- Docker Desktop ve Docker Compose (lokal kullanım için)
+- `.env` içinde Atlas Local veya Atlas bağlantı URI'si
 - `movies` kayıtlarında 1024 boyutlu `embedding` dizileri
 
 `BAAI/bge-m3` modelinin dense embedding boyutu 1024'tür. Bu nedenle hem film hem kullanıcı indeksleri aynı boyutu kullanır.
 
-## Ortam ayarı
+## Lokal ortam ayarı
+
+Projede bulunan Atlas Local servisini başlatın:
+
+```powershell
+docker compose up -d
+docker compose ps
+```
+
+Mevcut Windows MongoDB servisi `27017` portunda kalabilir. Atlas Local host üzerinde `27018` portunu kullanır:
+
+```dotenv
+MONGODB_URL=mongodb://localhost:27018/?directConnection=true
+MONGODB_DB=cinemate
+```
+
+Mevcut `cinemate` verisini taşımak gerekiyorsa MongoDB Database Tools kurulu bir terminalde çalıştırın:
+
+```powershell
+mongodump --uri="mongodb://localhost:27017/cinemate" --archive=cinemate.archive
+mongorestore --uri="mongodb://localhost:27018/cinemate?directConnection=true" --archive=cinemate.archive
+```
+
+Arşivi ve eski MongoDB servisini, yeni ortamı doğrulamadan silmeyin.
+
+## Atlas ortam ayarı
 
 Atlas bağlantısını `.env` içine yazın ve gerçek kullanıcı adı/parola içeren dosyayı Git'e eklemeyin:
 
@@ -50,7 +75,7 @@ Script aşağıdaki tanımı `movies.vector_index` ve `users.user_vector_index` 
 }
 ```
 
-Script tekrar çalıştırıldığında aynı isimdeki mevcut indeksleri atlar. Atlas indeks oluşturmayı arka planda tamamlar; Atlas arayüzündeki Search Indexes ekranında durum `READY` olmadan ilgili API çağrılarını test etmeyin.
+Script tekrar çalıştırıldığında aynı isimdeki mevcut indeksleri atlar. MongoDB indeks oluşturmayı arka planda tamamlar; durum `READY` olmadan ilgili API çağrılarını test etmeyin.
 
 ## Hangi özellik hangi indeksi kullanır?
 
@@ -61,7 +86,7 @@ Script tekrar çalıştırıldığında aynı isimdeki mevcut indeksleri atlar. 
 
 ## Hata giderme
 
-- `CommandNotSupported` veya benzeri bir hata, bağlantının Vector Search desteklemeyen yerel/Atlas dışı MongoDB'ye gittiğini gösterebilir.
+- `CommandNotSupported` veya benzeri bir hata, bağlantının Atlas Local yerine standart MongoDB servisine (`27017`) gittiğini gösterebilir.
 - `index not found`, indeks adının kodla aynı olmadığını veya oluşturma işleminin henüz tamamlanmadığını gösterir.
 - Boyut uyuşmazlığı hatasında film ve kullanıcı embedding'lerinin 1024 değer içerdiğini doğrulayın.
 - Boş sonuçlarda önce filmlerin `embedding` alanıyla seed edildiğini kontrol edin.

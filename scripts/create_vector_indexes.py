@@ -1,4 +1,4 @@
-"""Create the Atlas Vector Search indexes required by CineMate."""
+"""Create the MongoDB Vector Search indexes required by CineMate."""
 
 from __future__ import annotations
 
@@ -32,14 +32,14 @@ DEFINITION: dict[str, Any] = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Create CineMate vector indexes on a MongoDB Atlas database."
+        description="Create CineMate vector indexes on Atlas or Atlas Local."
     )
     parser.add_argument("--mongo-url", default=None)
     parser.add_argument("--database", default=None)
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Print index definitions without connecting to Atlas.",
+        help="Print index definitions without connecting to MongoDB.",
     )
     return parser.parse_args()
 
@@ -66,7 +66,7 @@ def main() -> None:
     mongo_url = args.mongo_url or os.getenv("MONGODB_URL")
     database_name = args.database or os.getenv("MONGODB_DB", "cinemate")
     if not mongo_url:
-        raise RuntimeError("MONGODB_URL must point to a MongoDB Atlas deployment.")
+        raise RuntimeError("MONGODB_URL must point to Atlas or Atlas Local.")
 
     client = MongoClient(mongo_url, serverSelectionTimeoutMS=10_000)
     try:
@@ -94,7 +94,7 @@ def main() -> None:
             )
             print(
                 f"{database_name}.{collection_name}: requested {created_name}. "
-                "Wait for the Atlas index status to become READY before vector queries."
+                "Wait for the index status to become READY before vector queries."
             )
     finally:
         client.close()

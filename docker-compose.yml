@@ -1,0 +1,16 @@
+services:
+  mongodb:
+    image: mongodb/mongodb-atlas-local:preview
+    container_name: cinemate-mongodb
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - mongodb_search:/data/mongot
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+  mongodb_search:
