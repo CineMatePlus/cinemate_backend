@@ -1,3 +1,4 @@
+import dotenv
 import pandas as pd
 from pymongo import MongoClient
 from sentence_transformers import SentenceTransformer
@@ -191,9 +192,9 @@ def migrate_csv_to_mongodb_optimized():
     """
     # --- Configuration ---
     csv_file_path = "app/ai/control/first_hundred.csv"
-    mongo_uri = "mongodb://localhost:27017/"
-    db_name = "tests"
-    collection_name = "movie_embeddings_bge_m3_10k"
+    mongo_uri = dotenv.dotenv_values().get("TEST_MONGODB_URL")
+    db_name = dotenv.dotenv_values().get("TEST_MONGODB_DB")
+    collection_name = "movies"
     chunk_size = 2000  # Arttırıldı
     embedding_batch_size = 64  # GPU memory'ye göre ayarlanabilir
     max_workers = min(4, mp.cpu_count())  # CPU core sayısına göre
