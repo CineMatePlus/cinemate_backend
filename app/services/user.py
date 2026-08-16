@@ -63,6 +63,8 @@ class UserService:
             {
                 "$set": {
                     "embedding": average_embedding,
+                    "embedding_model": settings.EMBEDDING_MODEL,
+                    "embedding_dimensions": settings.EMBEDDING_DIMENSIONS,
                     "updated_at": datetime.utcnow(),
                 }
             },
@@ -71,7 +73,13 @@ class UserService:
     async def _clear_embedding(self, user_object_id: ObjectId) -> None:
         await self.db.users.update_one(
             {"_id": user_object_id},
-            {"$unset": {"embedding": ""}},
+            {
+                "$unset": {
+                    "embedding": "",
+                    "embedding_model": "",
+                    "embedding_dimensions": "",
+                }
+            },
         )
 
     async def get_similar_users(

@@ -52,8 +52,9 @@ class Settings:
     ).rstrip("/")
     EMBEDDING_MODEL: str = get_env("EMBEDDING_MODEL", "qwen3-embedding:0.6b")
     EMBEDDING_DIMENSIONS: int = int(get_env("EMBEDDING_DIMENSIONS", "1024"))
-    EMBEDDING_TIMEOUT_SECONDS: float = float(get_env("EMBEDDING_TIMEOUT_SECONDS", "30"))
-    EMBEDDING_BATCH_SIZE: int = int(get_env("EMBEDDING_BATCH_SIZE", "32"))
+    EMBEDDING_TIMEOUT_SECONDS: float = float(get_env("EMBEDDING_TIMEOUT_SECONDS", "120"))
+    EMBEDDING_BATCH_SIZE: int = int(get_env("EMBEDDING_BATCH_SIZE", "64"))
+    EMBEDDING_KEEP_ALIVE: str = get_env("EMBEDDING_KEEP_ALIVE", "30m")
     EMBEDDING_WARMUP: bool = get_bool_env("EMBEDDING_WARMUP", False)
     EMBEDDING_QUERY_CACHE_SIZE: int = int(get_env("EMBEDDING_QUERY_CACHE_SIZE", "512"))
     EMBEDDING_QUERY_CACHE_TTL_SECONDS: float = float(

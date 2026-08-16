@@ -10,7 +10,13 @@ from app.services.embedding import (
     OllamaEmbeddingProvider,
 )
 from app.services.vector_math import average_vectors
-from scripts.seed_movies import embedding_text, parse_list
+from scripts.seed_movies import (
+    _embed_with_retry,
+    embedding_is_current,
+    embedding_text,
+    embedding_text_hash,
+    parse_list,
+)
 
 
 class RecordingProvider:
@@ -158,6 +164,7 @@ class OllamaProviderTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             [request.url.path for request in requests], ["/api/embed", "/api/tags"]
         )
+        self.assertEqual(requests[0].read().decode().count('"keep_alive":"30m"'), 1)
 
 
 class VectorMathTests(unittest.TestCase):
@@ -170,7 +177,7 @@ class VectorMathTests(unittest.TestCase):
 
 
 class MovieImportTests(unittest.TestCase):
-    def test_parses_sample_and_legacy_list_formats(self):
+    def test_parses_pipe_and_comma_separated_list_formats(self):
         self.assertEqual(parse_list("Drama|Thriller"), ["Drama", "Thriller"])
         self.assertEqual(
             parse_list("Action, Science Fiction, Adventure"),
@@ -196,6 +203,54 @@ class MovieImportTests(unittest.TestCase):
         self.assertIn("Keywords: dream, heist", text)
         self.assertIn("Released in 2010", text)
         self.assertNotIn("Adult Content", text)
+
+    def test_embedding_hash_is_stable_and_changes_with_text(self):
+        first = embedding_text_hash("movie text  \n")
+        self.assertEqual(first, embedding_text_hash("movie text"))
+        self.assertNotEqual(first, embedding_text_hash("changed movie text"))
+
+    def test_embedding_is_current_requires_matching_metadata_and_dimensions(self):
+        text_hash = embedding_text_hash("movie")
+        existing = {
+            "embedding": [1.0, 2.0],
+            "embedding_model": "model-a",
+            "embedding_dimensions": 2,
+            "embedding_text_hash": text_hash,
+        }
+        self.assertTrue(
+            embedding_is_current(
+                existing, model="model-a", dimensions=2, text_hash=text_hash
+            )
+        )
+        self.assertFalse(
+            embedding_is_current(
+                existing, model="model-b", dimensions=2, text_hash=text_hash
+            )
+        )
+
+
+class FlakyBatchService:
+    def __init__(self):
+        self.calls = []
+
+    async def embed_documents(self, texts):
+        self.calls.append(list(texts))
+        if "bad" in texts:
+            raise EmbeddingProviderError("bad input")
+        return [[float(len(text))] for text in texts]
+
+
+class MovieEmbeddingRetryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_splits_failed_batch_and_can_skip_one_bad_movie(self):
+        service = FlakyBatchService()
+        result = await _embed_with_retry(
+            service,
+            ["good", "bad", "also good"],
+            max_retries=0,
+            continue_on_error=True,
+        )
+        self.assertEqual(result, [[4.0], None, [9.0]])
+        self.assertIn(["bad"], service.calls)
 
 
 if __name__ == "__main__":

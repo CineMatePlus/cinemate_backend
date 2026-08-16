@@ -43,6 +43,9 @@ MONGODB_DB=cinemate
 JWT_SECRET_KEY=replace-with-a-random-secret
 EMBEDDING_BASE_URL=http://localhost:11434
 EMBEDDING_MODEL=qwen3-embedding:0.6b
+EMBEDDING_BATCH_SIZE=64
+EMBEDDING_TIMEOUT_SECONDS=120
+EMBEDDING_KEEP_ALIVE=30m
 ```
 
 Güvenli bir JWT anahtarı üretmek için:
@@ -61,34 +64,33 @@ docker compose up -d
 
 ## 3. Örnek film verisini yükleme
 
-Eski migration kaynağındaki 999 filmi doğrulamak için:
+Seed kaynağındaki 999 filmi doğrulamak için:
 
 ```powershell
-poetry run python scripts/seed_movies.py --csv app/ai/control/first_hundred.csv --dry-run
+poetry run python scripts/seed_movies.py --dry-run
 ```
 
 Filmleri Qwen3 embedding'leriyle veritabanına yazmak için:
 
 ```powershell
-poetry run python scripts/seed_movies.py --csv app/ai/control/first_hundred.csv
+poetry run python scripts/seed_movies.py
 ```
 
-Importer `id` tabanlı eski CSV şemasını otomatik algılar; sayısal alanları, tarihi
+Importer `app/ai/control/first_hundred.csv` içindeki `id` alanını kullanır; sayısal alanları, tarihi
 ve virgülle ayrılmış liste sütunlarını eski migration ile aynı veri tiplerine
 dönüştürür. Metinler Ollama'ya batch halinde gönderilir ve 1024 boyutlu
 embedding her film kaydına eklenir.
 
-Yalnızca sekiz sentetik örnek filmi kullanmak isterseniz:
-
-```powershell
-poetry run python scripts/seed_movies.py --csv data/sample_movies.csv
-```
+Importer streaming ve devam ettirilebilirdir: her chunk tamamlandığında MongoDB'ye
+yazılır; aynı model, boyut ve metin hash'ine sahip embedding'ler sonraki
+çalıştırmalarda otomatik olarak atlanır. Büyük veri setlerinde
+`--chunk-size 2000 --embedding-batch-size 64` önerilir. Tüm vektörleri bilinçli
+olarak yenilemek için `--force-reembed` kullanın.
 
 Embedding olmadan yalnızca içerikleri yüklemek için herhangi bir CSV komutuna
 `--skip-embeddings` ekleyebilirsiniz.
 
-Import komutu eski CSV'de `id`, örnek CSV'de `seed_id` üzerinden upsert yaptığı
-için güvenle tekrar çalıştırılabilir. Ayrıntılar için
+Import komutu `id` üzerinden upsert yaptığı için güvenle tekrar çalıştırılabilir. Ayrıntılar için
 [`docs/data-seeding.md`](docs/data-seeding.md) dosyasına bakın.
 
 ## 4. Vector Search indeksleri
@@ -167,7 +169,6 @@ poetry run python -m unittest discover -s tests/unit -v
 | `app/services/` | İş kuralları ve AI servisleri |
 | `app/models/` | İstek, yanıt ve alan modelleri |
 | `app/db/` | MongoDB bağlantısı ve temel indeksler |
-| `data/` | Yeniden dağıtılabilir örnek veriler |
 | `scripts/` | Veri seed ve Vector Search indeks araçları |
 | `tests/` | Davranış ve servis testleri |
 | `docs/` | Backend teknik dokümantasyonu |

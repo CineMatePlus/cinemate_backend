@@ -37,10 +37,12 @@ class OllamaEmbeddingProvider:
         base_url: str,
         model: str,
         timeout_seconds: float = 30,
+        keep_alive: str = "30m",
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
+        self.keep_alive = keep_alive
         self._owns_client = client is None
         self._client = client or httpx.AsyncClient(
             base_url=self.base_url,
@@ -53,7 +55,11 @@ class OllamaEmbeddingProvider:
         try:
             response = await self._client.post(
                 "/api/embed",
-                json={"model": self.model, "input": list(texts)},
+                json={
+                    "model": self.model,
+                    "input": list(texts),
+                    "keep_alive": self.keep_alive,
+                },
             )
             response.raise_for_status()
             payload = response.json()
@@ -253,6 +259,7 @@ def create_embedding_service() -> EmbeddingService:
         base_url=settings.EMBEDDING_BASE_URL,
         model=settings.EMBEDDING_MODEL,
         timeout_seconds=settings.EMBEDDING_TIMEOUT_SECONDS,
+        keep_alive=settings.EMBEDDING_KEEP_ALIVE,
     )
     return EmbeddingService(
         provider,
