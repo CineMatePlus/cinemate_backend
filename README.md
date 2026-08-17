@@ -119,6 +119,25 @@ için [`docs/atlas-vector-search.md`](docs/atlas-vector-search.md) dosyasını k
 poetry run uvicorn app.main:app --reload
 ```
 
+Backend'i Docker'da çalıştırmak için bunun yerine ayrı Compose dosyasını kullanın:
+
+```powershell
+docker compose -f docker-compose.backend.yml up -d --build
+```
+
+Atlas Local ve backend birbirinden bağımsız Compose projeleridir. Backend
+container içinden Atlas Local'e `host.docker.internal:27018`, host üzerinde
+native çalışan Ollama'ya ise `host.docker.internal:11434` üzerinden bağlanır.
+Gerektiğinde bu adresler `DOCKER_MONGODB_URL`, `DOCKER_TEST_MONGODB_URL` ve
+`DOCKER_EMBEDDING_BASE_URL` ortam değişkenleriyle değiştirilebilir.
+
+Servisleri birbirinden bağımsız durdurabilirsiniz:
+
+```powershell
+docker compose -f docker-compose.backend.yml down
+docker compose down
+```
+
 Uygulama başladıktan sonra:
 
 - API: `http://localhost:8000`
