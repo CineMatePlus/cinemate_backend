@@ -44,7 +44,7 @@ requests = "^2.34.2"
 optional = true
 
 [tool.poetry.group.performance.dependencies]
-locust = ">=2.37.11,<2.46.0"
+locust = ">=2.46.4,<2.47.0"
 
 [tool.isort]
 profile = "black"
