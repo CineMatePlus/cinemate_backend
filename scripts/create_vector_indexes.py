@@ -12,6 +12,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from pymongo import MongoClient
+from pymongo.errors import AutoReconnect, OperationFailure
 from pymongo.operations import SearchIndexModel
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -67,13 +68,35 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def search_indexes(collection: Any, *, deadline: float, poll_interval: float, **kwargs):
+    """Atlas Local can answer ping before its search management service is ready."""
+    while True:
+        try:
+            return list(collection.list_search_indexes(**kwargs))
+        except (AutoReconnect, OperationFailure) as exc:
+            transient = isinstance(exc, AutoReconnect) or (
+                exc.code == 125
+                and "Error connecting to Search Index Management service" in str(exc)
+            )
+            if not transient:
+                raise
+            if time.monotonic() >= deadline:
+                raise TimeoutError(
+                    "Search index management service did not become ready"
+                ) from exc
+            time.sleep(min(poll_interval, max(0, deadline - time.monotonic())))
+
+
 def wait_until_ready(database: Any, *, timeout: float, poll_interval: float) -> None:
     deadline = time.monotonic() + timeout
     pending = {collection_name: index_name for collection_name, index_name in INDEXES}
     while pending:
         for collection_name, index_name in tuple(pending.items()):
-            indexes = list(
-                database[collection_name].list_search_indexes(name=index_name)
+            indexes = search_indexes(
+                database[collection_name],
+                deadline=deadline,
+                poll_interval=poll_interval,
+                name=index_name,
             )
             index = indexes[0] if indexes else None
             status = str(index.get("status", "MISSING")).upper() if index else "MISSING"
@@ -119,6 +142,7 @@ def main() -> None:
     try:
         client.admin.command("ping")
         database = client[database_name]
+        deadline = time.monotonic() + args.wait_timeout
         existing_collections = set(database.list_collection_names())
         for collection_name, index_name in INDEXES:
             if collection_name not in existing_collections:
@@ -126,7 +150,12 @@ def main() -> None:
                 existing_collections.add(collection_name)
                 print(f"{database_name}.{collection_name}: created empty collection.")
             collection = database[collection_name]
-            existing = {index.get("name") for index in collection.list_search_indexes()}
+            existing = {
+                index.get("name")
+                for index in search_indexes(
+                    collection, deadline=deadline, poll_interval=args.poll_interval
+                )
+            }
             if index_name in existing:
                 print(
                     f"{database_name}.{collection_name}: {index_name} already exists."
