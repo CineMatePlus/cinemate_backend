@@ -1,11 +1,54 @@
+import inspect
 from typing import Any
 
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import ASCENDING, AsyncMongoClient
 
 from app.core.config import settings
 
-client = AsyncIOMotorClient(settings.MONGODB_URL)
-db = client[settings.MONGODB_DB]
+_client: AsyncMongoClient | None = None
+_database: Any = None
+
+
+class DatabaseProxy:
+    """Resolve the active database lazily after the application lifespan starts."""
+
+    def __getitem__(self, name: str) -> Any:
+        if _database is None:
+            raise RuntimeError("MongoDB has not been connected yet.")
+        return _database[name]
+
+    def __getattr__(self, name: str) -> Any:
+        if _database is None:
+            raise RuntimeError("MongoDB has not been connected yet.")
+        return getattr(_database, name)
+
+
+db = DatabaseProxy()
+
+
+async def connect_database() -> None:
+    global _client, _database
+    if _client is not None:
+        return
+    client = AsyncMongoClient(
+        settings.MONGODB_URL, serverSelectionTimeoutMS=10_000, tz_aware=True
+    )
+    try:
+        await client.admin.command("ping")
+    except Exception:
+        await client.close()
+        raise
+    _client = client
+    _database = client[settings.MONGODB_DB]
+
+
+async def close_database() -> None:
+    global _client, _database
+    client = _client
+    _client = None
+    _database = None
+    if client is not None:
+        await client.close()
 
 
 async def init_db():
@@ -31,6 +74,15 @@ async def init_db():
         [("user_id", 1), ("movie_id", 1), ("interaction_type", 1)], unique=True
     )
 
+    # Refresh-token session indexes
+    await db.refresh_sessions.create_index("token_hash", unique=True)
+    await db.refresh_sessions.create_index("jti", unique=True)
+    await db.refresh_sessions.create_index("family_id")
+    await db.refresh_sessions.create_index("user_id")
+    await db.refresh_sessions.create_index(
+        [("expires_at", ASCENDING)], expireAfterSeconds=0
+    )
+
 
 class VectorSearchIndexNotReadyError(RuntimeError):
     """One or more required Atlas Search indexes cannot serve queries yet."""
@@ -46,11 +98,10 @@ async def inspect_vector_search_indexes(database: Any = None) -> list[dict[str, 
     results: list[dict[str, Any]] = []
     for collection_name, index_name in required:
         try:
-            indexes = (
-                await target_db[collection_name]
-                .list_search_indexes()
-                .to_list(length=None)
-            )
+            cursor = target_db[collection_name].list_search_indexes()
+            if inspect.isawaitable(cursor):
+                cursor = await cursor
+            indexes = await cursor.to_list(length=None)
             index = next(
                 (item for item in indexes if item.get("name") == index_name), None
             )

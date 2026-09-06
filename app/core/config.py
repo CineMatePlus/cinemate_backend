@@ -28,8 +28,16 @@ class Settings:
 
     # CORS Ayarları
     CORS_ORIGINS: List[str] = [
-        i.strip() for i in get_env("CORS_ORIGINS", "*").split(",")
+        i.strip()
+        for i in get_env(
+            "CORS_ORIGINS", "http://localhost:3000,http://localhost:8000"
+        ).split(",")
     ]
+    CORS_ALLOW_CREDENTIALS: bool = get_bool_env("CORS_ALLOW_CREDENTIALS", True)
+    if CORS_ALLOW_CREDENTIALS and "*" in CORS_ORIGINS:
+        raise ValueError(
+            "CORS_ORIGINS cannot contain '*' when CORS_ALLOW_CREDENTIALS=true."
+        )
 
     # MongoDB Ayarları
     MONGODB_URL: str = get_env("MONGODB_URL", "mongodb://localhost:27017")
@@ -52,7 +60,9 @@ class Settings:
     ).rstrip("/")
     EMBEDDING_MODEL: str = get_env("EMBEDDING_MODEL", "qwen3-embedding:0.6b")
     EMBEDDING_DIMENSIONS: int = int(get_env("EMBEDDING_DIMENSIONS", "1024"))
-    EMBEDDING_TIMEOUT_SECONDS: float = float(get_env("EMBEDDING_TIMEOUT_SECONDS", "120"))
+    EMBEDDING_TIMEOUT_SECONDS: float = float(
+        get_env("EMBEDDING_TIMEOUT_SECONDS", "120")
+    )
     EMBEDDING_BATCH_SIZE: int = int(get_env("EMBEDDING_BATCH_SIZE", "64"))
     EMBEDDING_KEEP_ALIVE: str = get_env("EMBEDDING_KEEP_ALIVE", "30m")
     EMBEDDING_WARMUP: bool = get_bool_env("EMBEDDING_WARMUP", False)

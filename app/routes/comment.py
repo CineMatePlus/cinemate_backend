@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends, Query, Header
 from typing import List
+
+from fastapi import APIRouter, Depends, Header, Query
+
 from app.models.comment import (
-    CommentResponse,
     CommentCreate,
+    CommentResponse,
     CommentUpdate,
 )
-from app.services.comment import CommentService
-from app.services.auth import AuthService
 from app.models.user import UserInDB
+from app.services.auth import AuthService
+from app.services.comment import CommentService
 
 router = APIRouter(tags=["comments"])
 
@@ -36,9 +38,7 @@ async def get_comments(
     limit: int = Query(10, ge=1, le=100),
 ):
     """İçeriğin yorumlarını getirir"""
-    return await comment_service.get_comments(
-        movie_id=movie_id, skip=skip, limit=limit
-    )
+    return await comment_service.get_comments(movie_id=movie_id, skip=skip, limit=limit)
 
 
 @router.put("/{comment_id}", response_model=CommentResponse)

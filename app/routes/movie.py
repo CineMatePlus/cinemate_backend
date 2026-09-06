@@ -1,9 +1,7 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
-from jose import JWTError, jwt
 
-from app.core.config import settings
 from app.models.movie import MovieResponse
 from app.models.user import UserInDB
 from app.services.auth import AuthService
@@ -20,26 +18,11 @@ async def get_current_user_optional(
     if authorization is None:
         return None
 
-    parts = authorization.split()
-
-    if parts[0].lower() != "bearer" or len(parts) != 2:
-        # Token formatı yanlışsa veya token yoksa devam et ama kullanıcı döndürme
-        return None
-
-    token = parts[1]
-
     try:
-        payload = jwt.decode(
-            token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
-        )
-        username: str = payload.get("sub")
-        if username is None:
-            return None
-    except JWTError:
+        token = auth_service.bearer_token(authorization)
+        return await auth_service.get_current_user(token)
+    except HTTPException:
         return None
-
-    user = await auth_service.get_user(username=username)
-    return user
 
 
 @router.get("", response_model=List[MovieResponse])

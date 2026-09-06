@@ -1,11 +1,13 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from bson import ObjectId
 import asyncio
+
+from bson import ObjectId
+from pymongo import AsyncMongoClient
+
 from app.core.config import settings
 
 
 async def check_data():
-    client = AsyncIOMotorClient(settings.MONGODB_URL)
+    client = AsyncMongoClient(settings.MONGODB_URL)
     db = client.cinetest
 
     # user_contents koleksiyonundan bir kayıt al
@@ -28,7 +30,7 @@ async def check_data():
         for c in all_contents:
             print(f"ID: {c['_id']}, Type: {type(c['_id'])}")
 
-    client.close()
+    await client.close()
 
 
 asyncio.run(check_data())

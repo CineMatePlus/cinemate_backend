@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Tuple
 
 from bson import ObjectId
@@ -65,7 +65,7 @@ class InteractionService:
             return False  # Removed
         else:
             # Interaction does not exist, so add it
-            interaction_data["created_at"] = datetime.utcnow()
+            interaction_data["created_at"] = datetime.now(timezone.utc)
             await self.db.interactions.insert_one(interaction_data)
             if counter_field:
                 await self.db.movies.update_one(
@@ -134,7 +134,7 @@ class InteractionService:
             + MovieService._movie_response_pipeline()
         )
 
-        movies_cursor = self.db.interactions.aggregate(final_pipeline)
+        movies_cursor = await self.db.interactions.aggregate(final_pipeline)
         movies = await movies_cursor.to_list(length=limit)
         return [MovieResponse(**movie) for movie in movies]
 

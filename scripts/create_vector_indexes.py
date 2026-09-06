@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -46,7 +47,48 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print index definitions without connecting to MongoDB.",
     )
+    parser.add_argument(
+        "--wait",
+        action="store_true",
+        help="Wait until every required search index reports READY.",
+    )
+    parser.add_argument(
+        "--wait-timeout",
+        type=float,
+        default=180.0,
+        help="Maximum seconds to wait for search indexes (default: 180).",
+    )
+    parser.add_argument(
+        "--poll-interval",
+        type=float,
+        default=2.0,
+        help="Seconds between readiness checks (default: 2).",
+    )
     return parser.parse_args()
+
+
+def wait_until_ready(database: Any, *, timeout: float, poll_interval: float) -> None:
+    deadline = time.monotonic() + timeout
+    pending = {collection_name: index_name for collection_name, index_name in INDEXES}
+    while pending:
+        for collection_name, index_name in tuple(pending.items()):
+            indexes = list(
+                database[collection_name].list_search_indexes(name=index_name)
+            )
+            index = indexes[0] if indexes else None
+            status = str(index.get("status", "MISSING")).upper() if index else "MISSING"
+            queryable = bool(index.get("queryable", False)) if index else False
+            if status == "READY" and queryable:
+                print(f"{database.name}.{collection_name}: {index_name} is READY.")
+                pending.pop(collection_name)
+        if not pending:
+            return
+        if time.monotonic() >= deadline:
+            names = ", ".join(
+                f"{collection}.{index}" for collection, index in pending.items()
+            )
+            raise TimeoutError(f"Timed out waiting for Vector Search indexes: {names}")
+        time.sleep(poll_interval)
 
 
 def main() -> None:
@@ -100,6 +142,12 @@ def main() -> None:
             print(
                 f"{database_name}.{collection_name}: requested {created_name}. "
                 "Wait for the index status to become READY before vector queries."
+            )
+        if args.wait:
+            wait_until_ready(
+                database,
+                timeout=args.wait_timeout,
+                poll_interval=args.poll_interval,
             )
     finally:
         client.close()

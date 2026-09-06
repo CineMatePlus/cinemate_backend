@@ -45,7 +45,7 @@ def step_impl(context):
         "password": "testpassword123",
     }
     response = requests.post(f"{BASE_URL}/auth/register", json=register_data)
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     # Sonra giriş yap
     body = {
@@ -79,3 +79,44 @@ def step_impl(context):
 @then('the response should contain "{text}"')
 def step_impl(context, text):
     assert text in context.response.text
+
+
+@given("I have a valid token pair")
+def step_impl(context):
+    register_data = {
+        "email": "rotation@example.com",
+        "name": "Rotation Test",
+        "password": "testpassword123",
+    }
+    response = requests.post(f"{BASE_URL}/auth/register", json=register_data)
+    assert response.status_code == 201
+    context.refresh_token = response.json()["refresh_token"]
+
+
+@when("I rotate the refresh token")
+def step_impl(context):
+    context.previous_refresh_token = context.refresh_token
+    context.response = requests.post(
+        f"{BASE_URL}/auth/refresh",
+        json={"refresh_token": context.refresh_token},
+    )
+    if context.response.status_code == 200:
+        context.refresh_token = context.response.json()["refresh_token"]
+
+
+@when("I reuse the previous refresh token")
+def step_impl(context):
+    context.response = requests.post(
+        f"{BASE_URL}/auth/refresh",
+        json={"refresh_token": context.previous_refresh_token},
+    )
+
+
+@then("the response status code should be 201")
+def step_impl(context):
+    assert context.response.status_code == 201
+
+
+@then("the response status code should be 401")
+def step_impl(context):
+    assert context.response.status_code == 401

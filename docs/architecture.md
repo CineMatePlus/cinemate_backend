@@ -362,20 +362,20 @@ CineMate, kullanıcı şifrelerini güvenli bir şekilde saklamak için BCrypt a
 - **Salt Entegrasyonu**: Her şifre için otomatik olarak benzersiz salt değerleri kullanır.
 - **Uyarlanabilir İş Faktörü**: Hesaplama gücü arttıkça algoritmanın zorluğu artırılabilir.
 
-Şifre hashleme işlemi, Passlib kütüphanesinin CryptContext sınıfı kullanılarak uygulanmıştır:
+Şifre hashleme işlemi doğrudan bcrypt'in güncel API'siyle uygulanmıştır:
 
 ```python
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 def get_password_hash(password: str) -> str:
     """Şifre hashleme"""
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Şifre doğrulama"""
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+    )
 ```
 
 #### Şifre Politikası
@@ -392,27 +392,32 @@ Bu ayarlar, `settings.py` dosyasında yapılandırılabilir ve gerektiğinde de�
 #### Token Oluşturma ve Doğrulama
 JSON Web Token (JWT) standardı, kullanıcı kimlik doğrulaması için kullanılmaktadır. Token'lar, kullanıcı kimliğini doğrulamak ve API kaynaklarına erişim izni vermek için kullanılır.
 
-Token oluşturma süreci:
+Token oluşturma süreci (PyJWT ve timezone-aware UTC tarihleriyle):
 ```python
-from jose import jwt
-from datetime import datetime, timedelta
+import jwt
+from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
-def create_access_token(data: dict, expires_delta: timedelta) -> str:
+def create_access_token(subject: str, expires_delta: timedelta) -> str:
     """JWT token oluşturma"""
-    to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(
-        to_encode, 
+    now = datetime.now(timezone.utc)
+    claims = {
+        "sub": subject,
+        "type": "access",
+        "jti": str(uuid4()),
+        "iat": now,
+        "exp": now + expires_delta,
+    }
+    return jwt.encode(
+        claims,
         settings.JWT_SECRET_KEY, 
         algorithm=settings.JWT_ALGORITHM
     )
-    return encoded_jwt
 ```
 
 Token doğrulama süreci:
 ```python
-from jose import JWTError, jwt
+import jwt
 from fastapi import HTTPException, status
 
 def get_current_user(token: str) -> UserInDB:
@@ -428,7 +433,7 @@ def get_current_user(token: str) -> UserInDB:
             raise HTTPException(status_code=401, detail="Invalid token")
         # Kullanıcıyı veritabanından getir ve doğrula
         # ...
-    except JWTError:
+    except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 ```
 
@@ -436,7 +441,9 @@ def get_current_user(token: str) -> UserInDB:
 Güvenliği artırmak için, token'lar sınırlı bir süre için geçerlidir:
 
 - **Access Token**: Varsayılan olarak 60 dakika geçerlidir
-- **Refresh Token**: Varsayılan olarak 7 gün geçerlidir (gerekirse)
+- **Refresh Token**: Varsayılan olarak 7 gün geçerlidir
+
+Refresh token'lar tek kullanımlı olarak döndürülür. Sunucuda ham token yerine SHA-256 özeti tutulur; kullanılmış token yeniden sunulursa aynı `family_id` altındaki oturum ailesinin tamamı iptal edilir. Logout access token'ı blacklist'e almaz; access token kalan ömrü boyunca en fazla 60 dakika geçerli olabilir.
 
 Token süresi dolduğunda, kullanıcı yeniden kimlik doğrulaması yapmak zorunda kalmadan yeni bir token alabilir:
 
@@ -1230,6 +1237,8 @@ async def test_create_content():
 Dış sistemlere bağımlılıkları test etmek için mock nesneleri:
 
 ```python
+from datetime import datetime, timezone
+
 @pytest.fixture
 def mock_db():
     """Veritabanı için mock nesne sağlar"""
@@ -1242,8 +1251,8 @@ def mock_db():
                     "email": "test@example.com",
                     "name": "Test User",
                     "hashed_password": "hashed_password",
-                    "created_at": datetime.utcnow(),
-                    "updated_at": datetime.utcnow()
+                    "created_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc)
                 }
             return None
         

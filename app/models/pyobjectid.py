@@ -1,10 +1,12 @@
 from typing import Any
+
 from bson import ObjectId
 from pydantic import GetCoreSchemaHandler
-from pydantic_core import core_schema, CoreSchema
+from pydantic_core import CoreSchema, core_schema
+
 
 class PyObjectId(ObjectId):
-    """ Custom Pydantic type for MongoDB's ObjectId """
+    """Custom Pydantic type for MongoDB's ObjectId"""
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -22,9 +24,7 @@ class PyObjectId(ObjectId):
                     core_schema.chain_schema(
                         [
                             core_schema.str_schema(),
-                            core_schema.no_info_plain_validator_function(
-                                cls.validate
-                            ),
+                            core_schema.no_info_plain_validator_function(cls.validate),
                         ]
                     ),
                 ]

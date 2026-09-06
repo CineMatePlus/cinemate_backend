@@ -28,7 +28,7 @@ class MovieService:
 
         pipeline.extend(MovieService._movie_response_pipeline())
 
-        movies_cursor = db.movies.aggregate(pipeline)
+        movies_cursor = await db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=limit)
         return [MovieResponse(**movie) for movie in movies]
 
@@ -43,7 +43,7 @@ class MovieService:
 
         pipeline.extend(MovieService._movie_response_pipeline())
 
-        movies_cursor = db.movies.aggregate(pipeline)
+        movies_cursor = await db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=limit)
         return [MovieResponse(**movie) for movie in movies]
 
@@ -61,7 +61,7 @@ class MovieService:
 
         pipeline.extend(MovieService._movie_response_pipeline())
 
-        movies_cursor = db.movies.aggregate(pipeline)
+        movies_cursor = await db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=1)
 
         if not movies:
@@ -88,7 +88,7 @@ class MovieService:
         pipeline.extend(MovieService._movie_response_pipeline())
 
         started_at = start_vector_search_timer()
-        movies_cursor = db.movies.aggregate(pipeline)
+        movies_cursor = await db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=limit)
         record_vector_search(
             "movie_text_search", started_at, movies, "similarity_score"
@@ -138,7 +138,7 @@ class MovieService:
         pipeline.extend(MovieService._movie_response_pipeline())
 
         started_at = start_vector_search_timer()
-        similar_movies_cursor = db.movies.aggregate(pipeline)
+        similar_movies_cursor = await db.movies.aggregate(pipeline)
         similar_movies = await similar_movies_cursor.to_list(length=limit)
         record_vector_search(
             "movie_list_recommendations",
@@ -185,7 +185,7 @@ class MovieService:
         pipeline.extend(MovieService._movie_response_pipeline())
 
         started_at = start_vector_search_timer()
-        movies_cursor = db.movies.aggregate(pipeline)
+        movies_cursor = await db.movies.aggregate(pipeline)
         movies = await movies_cursor.to_list(length=10)
         record_vector_search("similar_movies", started_at, movies, "similarity_score")
 

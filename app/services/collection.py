@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from bson import ObjectId
@@ -35,8 +35,8 @@ class CollectionService:
                 detail="This collection name already exists.",
             )
 
-        now = datetime.utcnow()
-        db_collection = collection_data.dict()
+        now = datetime.now(timezone.utc)
+        db_collection = collection_data.model_dump()
         db_collection.update(
             {
                 "user_id": user_object_id,
@@ -92,7 +92,7 @@ class CollectionService:
             {"$project": {"owner_info": 0}},
         ]
 
-        collections_cursor = self.db.collections.aggregate(pipeline)
+        collections_cursor = await self.db.collections.aggregate(pipeline)
         collections = await collections_cursor.to_list(length=limit)
         return [CollectionResponse(**c) for c in collections]
 
@@ -121,7 +121,7 @@ class CollectionService:
             {"$project": {"owner_info": 0}},
         ]
 
-        collections_cursor = self.db.collections.aggregate(pipeline)
+        collections_cursor = await self.db.collections.aggregate(pipeline)
         collections = await collections_cursor.to_list(length=1)
 
         if not collections:
@@ -163,11 +163,11 @@ class CollectionService:
         """Koleksiyonu günceller"""
         await self._get_collection_and_validate_owner(collection_id, user_id)
 
-        update_data = collection_update.dict(exclude_unset=True)
+        update_data = collection_update.model_dump(exclude_unset=True)
         if not update_data:
             raise HTTPException(status_code=400, detail="No update data provided")
 
-        update_data["updated_at"] = datetime.utcnow()
+        update_data["updated_at"] = datetime.now(timezone.utc)
 
         if "name" in update_data:
             existing_name = await self.db.collections.find_one(
@@ -247,21 +247,14 @@ class CollectionService:
         self, user_id: str, skip: int = 0, limit: int = 10
     ) -> List[CollectionInDB]:
         """Kullanıcının public koleksiyonlarını getirir"""
-        try:
-            collections = (
-                await self.db.collections.find({"user_id": user_id, "is_public": True})
-                .sort("updated_at", -1)
-                .skip(skip)
-                .limit(limit)
-                .to_list(length=limit)
-            )
-
-            return [
-                CollectionInDB(**{**collection, "_id": str(collection["_id"])})
-                for collection in collections
-            ]
-        except Exception as e:
-            self._handle_exception(e)
+        collections = await (
+            self.db.collections.find({"user_id": ObjectId(user_id), "is_public": True})
+            .sort("updated_at", -1)
+            .skip(skip)
+            .limit(limit)
+            .to_list(length=limit)
+        )
+        return [CollectionInDB(**collection) for collection in collections]
 
     async def get_movies_in_collection(
         self, collection_id: str, current_user_id: Optional[str], skip: int, limit: int
@@ -301,7 +294,7 @@ class CollectionService:
 
         movies_pipeline.extend(MovieService._movie_response_pipeline())
 
-        movies_cursor = self.db.movies.aggregate(movies_pipeline)
+        movies_cursor = await self.db.movies.aggregate(movies_pipeline)
         movies = await movies_cursor.to_list(length=limit)
 
         # Orijinal sıralamayı korumak için

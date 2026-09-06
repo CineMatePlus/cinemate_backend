@@ -1,8 +1,13 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.db.mongodb import (
+    close_database,
+    connect_database,
+    get_database,
     init_db,
     inspect_vector_search_indexes,
     verify_vector_search_indexes_ready,
@@ -15,19 +20,36 @@ from app.services.embedding import (
 )
 from app.services.vector_search import vector_search_metrics
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    await connect_database()
+    try:
+        await init_db()
+        if settings.VECTOR_SEARCH_STARTUP_CHECK:
+            await verify_vector_search_indexes_ready()
+        if settings.EMBEDDING_WARMUP:
+            await get_embedding_service().warmup()
+        yield
+    finally:
+        await close_embedding_service()
+        await close_database()
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description=settings.PROJECT_DESCRIPTION,
     version=settings.PROJECT_VERSION,
     docs_url=f"{settings.API_V1_STR}/docs",
     redoc_url=f"{settings.API_V1_STR}/redoc",
+    lifespan=lifespan,
 )
 
 # CORS ayarları
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -51,25 +73,39 @@ app.include_router(
 )
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Uygulama başlatılırken çalışacak işlemler"""
-    # Veritabanı bağlantısını ve indeksleri oluştur
-    await init_db()
-    if settings.VECTOR_SEARCH_STARTUP_CHECK:
-        await verify_vector_search_indexes_ready()
-    if settings.EMBEDDING_WARMUP:
-        await get_embedding_service().warmup()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await close_embedding_service()
-
-
 @app.get("/")
 async def root():
     return {"message": "Cinemate API'ye hoş geldiniz!"}
+
+
+@app.get("/health/live")
+async def liveness_health():
+    return {"status": "healthy"}
+
+
+@app.get("/health/ready")
+async def readiness_health():
+    try:
+        await get_database().command("ping")
+        indexes = await inspect_vector_search_indexes()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"status": "unhealthy", "reason": type(exc).__name__},
+        ) from exc
+    if not all(index["ready"] for index in indexes):
+        public_indexes = [
+            {
+                key: index[key]
+                for key in ("collection", "index", "status", "queryable", "ready")
+            }
+            for index in indexes
+        ]
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"status": "unhealthy", "indexes": public_indexes},
+        )
+    return {"status": "healthy", "indexes": indexes}
 
 
 @app.get("/health/embedding")

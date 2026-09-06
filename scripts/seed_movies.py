@@ -127,7 +127,7 @@ def _parse_movie(
     try:
         release_date = datetime.strptime(
             (row.get("release_date") or "").strip(), "%Y-%m-%d"
-        )
+        ).replace(tzinfo=timezone.utc)
     except ValueError as exc:
         raise ValueError(f"Line {line_number}: invalid release_date.") from exc
     movie: dict[str, Any] = {
@@ -438,7 +438,7 @@ async def run_import(args: argparse.Namespace, csv_path: Path) -> ImportStats:
 
     mongo_url = args.mongo_url or os.getenv("MONGODB_URL", "mongodb://localhost:27017")
     database_name = args.database or os.getenv("MONGODB_DB", "cinemate")
-    client = MongoClient(mongo_url, serverSelectionTimeoutMS=10_000)
+    client = MongoClient(mongo_url, serverSelectionTimeoutMS=10_000, tz_aware=True)
     stats = ImportStats()
     started_at = perf_counter()
     indexed_fields: set[str] = set()

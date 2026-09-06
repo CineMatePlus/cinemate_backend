@@ -1,205 +1,135 @@
 # CineMate Backend
 
-CineMate'in kimlik doğrulama, içerik, koleksiyon, yorum, kullanıcı etkileşimi ve yapay zeka destekli öneri işlevlerini sunan FastAPI servisidir.
+CineMate; FastAPI, MongoDB Atlas Vector Search ve Ollama ile film keşfi, koleksiyon yönetimi ve kişiselleştirilmiş öneriler sunan bir backend servisidir.
 
-## Gereksinimler
+## Hızlı başlangıç
 
-- Python 3.10 veya üzeri
-- Poetry 2.x
-- Docker Desktop (MongoDB Atlas Local ve Vector Search için)
-- [Ollama](https://ollama.com/) ve `qwen3-embedding:0.6b` modeli
+Gereksinimler: Docker Desktop, Docker Compose ve varsayılan geliştirme yolu için host işletim sisteminde [Ollama](https://ollama.com/). Python ile yerel geliştirme yapmak için Python 3.12 ve Poetry 2.2 gerekir.
 
-MongoDB Atlas Local sayesinde CRUD ve Vector Search özelliklerinin tamamı yerelde çalışır.
-
-## 1. Bağımlılıkları kurma
-
-Backend yalnızca platform bağımsız HTTP istemcisini kurar; PyTorch, CUDA veya
-Sentence Transformers içermez:
-
-```powershell
-poetry install
+```bash
+cp .env.example .env
 ```
 
-Embedding runtime'ını ve modeli hazırlayın:
+`JWT_SECRET_KEY=your-secret-key` yalnız geliştirme uyumluluğu için desteklenir. İnternete açık veya gerçek kullanıcı verisi tutan hiçbir ortamda kullanılmamalıdır; güçlü ve benzersiz bir anahtar üretin:
 
-```powershell
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(64))"
+```
+
+### Host Ollama — macOS/Metal için önerilen
+
+```bash
 ollama pull qwen3-embedding:0.6b
+docker compose up -d --build --wait
+docker compose --profile seed run --rm seed
 ```
 
-Ollama Windows ve Linux'ta desteklenen NVIDIA/AMD GPU'yu, Apple Silicon'da
-Metal'i otomatik kullanır; uygun hızlandırıcı yoksa CPU'ya düşer.
+Bu akış MongoDB'yi başlatır, Vector Search indekslerini idempotent biçimde oluşturup `READY` durumunu bekler, API'yi kaldırır ve 999 filmi `id` üzerinden upsert eder. İlk embedding üretimi donanıma göre birkaç dakika sürebilir; aynı seed komutu tekrar çalıştırıldığında güncel embedding'ler atlanır ve duplicate oluşmaz.
 
-## 2. Ortam ayarları
+### Tam container Ollama
 
-```powershell
-Copy-Item .env.example .env
+```bash
+docker compose --env-file .env.ollama.example --profile ollama up -d ollama
+docker compose --env-file .env.ollama.example --profile ollama run --rm ollama-model
+docker compose --env-file .env.ollama.example up -d --build --wait
+docker compose --env-file .env.ollama.example --profile seed run --rm seed
 ```
 
-`.env` içinde en azından MongoDB bağlantısını ve JWT anahtarını düzenleyin:
+Model yaklaşık 639 MB indirilir. Apple Silicon'da host Ollama, Metal hızlandırmasını doğrudan kullandığı için genellikle daha hızlıdır.
 
-```dotenv
-MONGODB_URL=mongodb://localhost:27018/?directConnection=true
-MONGODB_DB=cinemate
-JWT_SECRET_KEY=replace-with-a-random-secret
-EMBEDDING_BASE_URL=http://localhost:11434
-EMBEDDING_MODEL=qwen3-embedding:0.6b
-EMBEDDING_BATCH_SIZE=64
-EMBEDDING_TIMEOUT_SECONDS=120
-EMBEDDING_KEEP_ALIVE=30m
+Servisleri durdurmak için `docker compose down`; verileri de silmek için bilinçli olarak `docker compose down -v` kullanın.
+
+## Doğrulama ve sağlık sözleşmesi
+
+```bash
+python scripts/verify_seed.py
+curl http://localhost:8000/health/live
+curl http://localhost:8000/health/ready
+curl http://localhost:8000/health/embedding
 ```
 
-Güvenli bir JWT anahtarı üretmek için:
+- `/health/live`: API process'i ayakta mı?
+- `/health/ready`: MongoDB ve zorunlu Vector Search indeksleri hazır mı? Docker healthcheck bunu kullanır.
+- `/health/embedding`: Ollama ve seçili embedding modeli hazır mı?
+- `/health/vector-search`: indeks durumlarının ayrıntılı görünümü.
 
-```powershell
-poetry run python -c "import secrets; print(secrets.token_urlsafe(64))"
+API: `http://localhost:8000`
+
+Swagger UI: `http://localhost:8000/api/v1/docs`
+
+MongoDB host üzerinde `localhost:27018`, Compose ağı içinde `mongodb:27017` adresindedir.
+
+## Kimlik doğrulama
+
+Parolalar config üzerinden 8–32 karakter, whitespace-only yasağı ve bcrypt'in 72 UTF-8 byte sınırıyla doğrulanır. Access token 60 dakika, refresh token 7 gün geçerlidir. Her refresh token tek kullanımlıktır; tekrar kullanım tespit edilirse aynı cihaz/oturum ailesinin tamamı iptal edilir. Ham refresh token MongoDB'ye yazılmaz, yalnız SHA-256 özeti saklanır.
+
+Register, login ve refresh yanıtı:
+
+```json
+{
+  "user": { "_id": "...", "email": "user@example.com", "name": "User" },
+  "token_type": "bearer",
+  "access_token": "...",
+  "refresh_token": "...",
+  "access_expires_in": 3600,
+  "refresh_expires_in": 604800
+}
 ```
 
-Atlas Local'i başlatın:
+Refresh ve logout örnekleri:
 
-```powershell
-docker compose up -d
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/refresh \
+  -H 'Content-Type: application/json' \
+  -d '{"refresh_token":"REFRESH_TOKEN"}'
+
+curl -X POST http://localhost:8000/api/v1/auth/logout \
+  -H 'Content-Type: application/json' \
+  -d '{"refresh_token":"REFRESH_TOKEN"}'
+
+curl -X POST http://localhost:8000/api/v1/auth/logout-all \
+  -H 'Authorization: Bearer ACCESS_TOKEN'
 ```
 
-`27018` portu, bilgisayarda çalışan mevcut MongoDB servisiyle çakışmaması için kullanılır.
+`logout`, `logout-all` ve parola değişimi refresh oturumlarını kapatır. Mevcut access token'lar blacklist edilmez ve kalan ömürleri boyunca, en fazla 60 dakika, geçerli olabilir.
 
-## 3. Örnek film verisini yükleme
+## Yerel geliştirme ve test
 
-Seed kaynağındaki 999 filmi doğrulamak için:
-
-```powershell
-poetry run python scripts/seed_movies.py --dry-run
-```
-
-Filmleri Qwen3 embedding'leriyle veritabanına yazmak için:
-
-```powershell
-poetry run python scripts/seed_movies.py
-```
-
-Importer `app/ai/control/first_hundred.csv` içindeki `id` alanını kullanır; sayısal alanları, tarihi
-ve virgülle ayrılmış liste sütunlarını eski migration ile aynı veri tiplerine
-dönüştürür. Metinler Ollama'ya batch halinde gönderilir ve 1024 boyutlu
-embedding her film kaydına eklenir.
-
-Importer streaming ve devam ettirilebilirdir: her chunk tamamlandığında MongoDB'ye
-yazılır; aynı model, boyut ve metin hash'ine sahip embedding'ler sonraki
-çalıştırmalarda otomatik olarak atlanır. Büyük veri setlerinde
-`--chunk-size 2000 --embedding-batch-size 64` önerilir. Tüm vektörleri bilinçli
-olarak yenilemek için `--force-reembed` kullanın.
-
-Embedding olmadan yalnızca içerikleri yüklemek için herhangi bir CSV komutuna
-`--skip-embeddings` ekleyebilirsiniz.
-
-Import komutu `id` üzerinden upsert yaptığı için güvenle tekrar çalıştırılabilir. Ayrıntılar için
-[`docs/data-seeding.md`](docs/data-seeding.md) dosyasına bakın.
-
-## 4. Vector Search indeksleri
-
-Atlas Local sağlıklı duruma geldikten sonra gerekli iki indeksi oluşturun:
-
-```powershell
-poetry run python scripts/create_vector_indexes.py
-```
-
-Script aşağıdaki 1024 boyutlu cosine indekslerini oluşturur:
-
-| Koleksiyon | İndeks | Alan |
-| --- | --- | --- |
-| `movies` | `movie_vector_index` | `embedding` |
-| `users` | `user_vector_index` | `embedding` |
-
-API varsayılan olarak başlangıçta iki indeksi de denetler ve durumları `READY`
-değilse açık bir hatayla durur. Yalnızca normal MongoDB kullanan test ortamlarında
-`VECTOR_SEARCH_STARTUP_CHECK=false` ayarlanmalıdır. Yerel ve Atlas kurulum adımları
-için [`docs/atlas-vector-search.md`](docs/atlas-vector-search.md) dosyasını kullanın.
-
-## 5. API'yi çalıştırma
-
-```powershell
-poetry run uvicorn app.main:app --reload
-```
-
-Backend'i Docker'da çalıştırmak için bunun yerine ayrı Compose dosyasını kullanın:
-
-```powershell
-docker compose -f docker-compose.backend.yml up -d --build
-```
-
-Atlas Local ve backend birbirinden bağımsız Compose projeleridir. Backend
-container içinden Atlas Local'e `host.docker.internal:27018`, host üzerinde
-native çalışan Ollama'ya ise `host.docker.internal:11434` üzerinden bağlanır.
-Gerektiğinde bu adresler `DOCKER_MONGODB_URL`, `DOCKER_TEST_MONGODB_URL` ve
-`DOCKER_EMBEDDING_BASE_URL` ortam değişkenleriyle değiştirilebilir.
-
-Servisleri birbirinden bağımsız durdurabilirsiniz:
-
-```powershell
-docker compose -f docker-compose.backend.yml down
-docker compose down
-```
-
-Uygulama başladıktan sonra:
-
-- API: `http://localhost:8000`
-- Swagger UI: `http://localhost:8000/api/v1/docs`
-- ReDoc: `http://localhost:8000/api/v1/redoc`
-
-Embedding sağlık kontrolü `http://localhost:8000/health/embedding` adresindedir.
-Vector indeks durumu `http://localhost:8000/health/vector-search`, son sorguların
-gecikme ve similarity dağılımları ise `http://localhost:8000/metrics/vector-search`
-adresindedir. Ölçümler process başına bellekte ve sınırlı bir pencerede tutulur.
-`EMBEDDING_WARMUP=true` ayarlanırsa API başlangıçta bir deneme embedding'i üretir
-ve Ollama/model hazır değilse başlangıcı durdurur. Varsayılan `false` olduğundan
-embedding servisi kapalıyken CRUD endpoint'leri çalışmaya devam eder.
-
-Backend Docker içinde, Ollama host işletim sisteminde çalışıyorsa
-`EMBEDDING_BASE_URL=http://host.docker.internal:11434` kullanın. Apple Silicon'da
-Metal hızlandırmasını korumak için Ollama'nın host üzerinde native çalışması önerilir.
-
-Tekrarlanan arama metinlerinin Ollama çağrıları varsayılan olarak 512 girdilik,
-10 dakika TTL'li LRU cache ile azaltılır. `EMBEDDING_QUERY_CACHE_SIZE` ve
-`EMBEDDING_QUERY_CACHE_TTL_SECONDS` ile ayarlanabilir; boyut veya TTL `0` yapılırsa
-cache kapanır. Vector Search `numCandidates` değeri sonuç limitinin 20 katı olarak
-dinamik hesaplanır ve 100-1000 aralığında tutulur. Bu politika
-`VECTOR_SEARCH_CANDIDATE_MULTIPLIER`, `VECTOR_SEARCH_MIN_CANDIDATES` ve
-`VECTOR_SEARCH_MAX_CANDIDATES` ile yük testine göre ayarlanabilir.
-
-## Testler
-
-Davranış testleri çalışan bir MongoDB örneği kullanır:
-
-```powershell
-poetry run behave tests/features
-```
-
-Embedding birim testleri Ollama veya MongoDB gerektirmez:
-
-```powershell
+```bash
+poetry install --with dev,test
+poetry run black --check app scripts tests
+poetry run isort --check-only app scripts tests
 poetry run python -m unittest discover -s tests/unit -v
+TEST_MONGODB_URL='mongodb://localhost:27018/?directConnection=true' poetry run behave tests/features
+poetry run pip-audit
 ```
 
-`run.bat`, Behave sonuçlarını Allure raporuna dönüştürmek için kullanılır ve sistemde Allure CLI bulunmasını bekler.
+Locust yalnız gerektiğinde kurulur: `poetry install --with performance`.
 
-## Kaynak yapısı
+CI; `quality`, `unit`, `integration` ve `container-security` job'larını PR ve `main` push'larında çalıştırır. Coverage XML artifact olarak üretilir; mevcut kod için global eşik uygulanmaz.
+
+## Seed verisi ve lisans
+
+Repo yalnız doğrulanmış 999 satırlık `app/ai/control/first_hundred.csv` seed'ini içerir. 533 MB canonical kaynak Git'e ve Docker build context'ine alınmaz. Kaynak, lisans, TMDB attribution ve sabit SHA-256 bilgileri [DATA_NOTICE.md](DATA_NOTICE.md) içindedir. Seed'i canonical dosyadan tekrar üretmek için:
+
+```bash
+python app/ai/control/first_hundred.py --input /path/to/TMDB_movie_dataset_v11.csv
+python scripts/verify_seed.py
+```
+
+## Proje yapısı
 
 | Yol | Sorumluluk |
 | --- | --- |
 | `app/routes/` | HTTP endpoint'leri |
-| `app/services/` | İş kuralları ve AI servisleri |
-| `app/models/` | İstek, yanıt ve alan modelleri |
-| `app/db/` | MongoDB bağlantısı ve temel indeksler |
-| `scripts/` | Veri seed ve Vector Search indeks araçları |
-| `tests/` | Davranış ve servis testleri |
-| `docs/` | Backend teknik dokümantasyonu |
+| `app/services/` | İş kuralları, auth ve embedding servisleri |
+| `app/models/` | Pydantic istek/yanıt modelleri |
+| `app/db/` | Async PyMongo lifecycle ve indeksler |
+| `scripts/` | Seed ve Vector Search bootstrap araçları |
+| `tests/` | Birim ve Behave entegrasyon testleri |
 
-Backend belgelerinin tamamı ve kaynak önceliği için [`docs/README.md`](docs/README.md) dosyasını kullanın. API sözleşmesinde çalışan OpenAPI şeması, statik endpoint açıklamalarından daha yetkilidir.
-
-## İlgili depolar
-
-- [Mobil uygulama](https://github.com/CineMatePlus/cinemate_mobile)
-- [Sistem diyagramları](https://github.com/CineMatePlus/docs)
-- [Akademik raporlar](https://github.com/CineMatePlus/rapor)
+Güvenlik bildirimi için [SECURITY.md](SECURITY.md), katkı akışı için [CONTRIBUTING.md](CONTRIBUTING.md) dosyasına bakın.
 
 ## Lisans
 
-Bu proje, telif hakkı Muhammet Berk'e ait olmak üzere [MIT License](LICENSE) ile lisanslanmıştır.
+Uygulama kodu [MIT License](LICENSE) altındadır. Veri dosyası için ayrı koşullar [DATA_NOTICE.md](DATA_NOTICE.md) içinde belirtilmiştir.

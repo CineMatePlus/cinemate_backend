@@ -18,7 +18,7 @@ Feature: User API Tests
         "gender": 0
       }
       """
-    Then the response status code should be 200
+    Then the response status code should be 201
     And the response should contain "access_token"
 
   Scenario: Login with registered user
@@ -37,3 +37,10 @@ Feature: User API Tests
     And the response should contain "email"
     And the response should contain "name"
 
+  Scenario: Rotate a refresh token and reject reuse
+    Given I have a valid token pair
+    When I rotate the refresh token
+    Then the response status code should be 200
+    And the response should contain "refresh_token"
+    When I reuse the previous refresh token
+    Then the response status code should be 401

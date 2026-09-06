@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from bson import ObjectId
@@ -65,7 +65,7 @@ class UserService:
                     "embedding": average_embedding,
                     "embedding_model": settings.EMBEDDING_MODEL,
                     "embedding_dimensions": settings.EMBEDDING_DIMENSIONS,
-                    "updated_at": datetime.utcnow(),
+                    "updated_at": datetime.now(timezone.utc),
                 }
             },
         )
@@ -119,7 +119,7 @@ class UserService:
         ]
 
         started_at = start_vector_search_timer()
-        similar_users_cursor = self.db.users.aggregate(pipeline)
+        similar_users_cursor = await self.db.users.aggregate(pipeline)
         similar_users = await similar_users_cursor.to_list(length=limit)
         record_vector_search("similar_users", started_at, similar_users, "similarity")
 

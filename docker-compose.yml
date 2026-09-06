@@ -1,16 +1,129 @@
+name: cinemate
+
+x-app-environment: &app-environment
+  PROJECT_NAME: ${PROJECT_NAME:-CineMate API}
+  PROJECT_DESCRIPTION: ${PROJECT_DESCRIPTION:-Movie and TV collection API}
+  PROJECT_VERSION: ${PROJECT_VERSION:-1.0.0}
+  API_V1_STR: ${API_V1_STR:-/api/v1}
+  CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8000}
+  CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-true}
+  MONGODB_URL: mongodb://mongodb:27017/?directConnection=true
+  MONGODB_DB: ${MONGODB_DB:-cinemate}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-secret-key}
+  JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+  ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+  REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+  PASSWORD_MIN_LENGTH: ${PASSWORD_MIN_LENGTH:-8}
+  PASSWORD_MAX_LENGTH: ${PASSWORD_MAX_LENGTH:-32}
+  EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-ollama}
+  EMBEDDING_BASE_URL: ${DOCKER_EMBEDDING_BASE_URL:-http://host.docker.internal:11434}
+  EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding:0.6b}
+  EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
+  EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-64}
+  EMBEDDING_TIMEOUT_SECONDS: ${EMBEDDING_TIMEOUT_SECONDS:-120}
+  EMBEDDING_KEEP_ALIVE: ${EMBEDDING_KEEP_ALIVE:-30m}
+  EMBEDDING_WARMUP: ${EMBEDDING_WARMUP:-false}
+  MOVIE_VECTOR_INDEX: ${MOVIE_VECTOR_INDEX:-movie_vector_index}
+  USER_VECTOR_INDEX: ${USER_VECTOR_INDEX:-user_vector_index}
+  VECTOR_SEARCH_STARTUP_CHECK: ${VECTOR_SEARCH_STARTUP_CHECK:-true}
+
+x-app-base: &app-base
+  build:
+    context: .
+    dockerfile: Dockerfile.backend
+  image: cinemate-backend:local
+  environment: *app-environment
+  extra_hosts:
+    - host.docker.internal:host-gateway
+
 services:
   mongodb:
-    image: mongodb/mongodb-atlas-local:preview
-    container_name: cinemate-mongodb
+    image: mongodb/mongodb-atlas-local:8.0.15-20260825T135058Z
+    hostname: mongodb
     restart: unless-stopped
+    environment:
+      DO_NOT_TRACK: "1"
     ports:
       - "27018:27017"
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
       - mongodb_search:/data/mongot
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.adminCommand({ping: 1}).ok ? 0 : 2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  index-init:
+    <<: *app-base
+    restart: "no"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: ["python", "scripts/create_vector_indexes.py", "--wait", "--wait-timeout", "180"]
+
+  backend:
+    <<: *app-base
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      index-init:
+        condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=5)"
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  seed:
+    <<: *app-base
+    profiles: ["seed"]
+    restart: "no"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      index-init:
+        condition: service_completed_successfully
+    command: ["python", "scripts/seed_movies.py"]
+
+  ollama:
+    image: ollama/ollama:0.32.5
+    profiles: ["ollama"]
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  ollama-model:
+    image: ollama/ollama:0.32.5
+    profiles: ["ollama"]
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    command: ["pull", "${EMBEDDING_MODEL:-qwen3-embedding:0.6b}"]
 
 volumes:
   mongodb_data:
   mongodb_config:
   mongodb_search:
+  ollama_data:

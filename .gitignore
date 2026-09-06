@@ -1,5 +1,6 @@
 # CSV files
 *.csv
+!app/ai/control/first_hundred.csv
 
 
 
@@ -25,3 +26,10 @@ venv.bak/
 # Allure Reports
 tests/allure-report/
 tests/allure-results/
+
+# Coverage and local tooling
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.ruff_cache/

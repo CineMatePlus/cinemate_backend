@@ -1,21 +1,26 @@
+import logging
+from datetime import datetime, timezone
 from typing import List, Optional
-from datetime import datetime
-from fastapi import HTTPException, status
+
 from bson import ObjectId
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from fastapi import HTTPException, status
+from pymongo.asynchronous.database import AsyncDatabase
+
+from app.db.mongodb import get_database
 from app.models.comment import (
     CommentCreate,
-    CommentUpdate,
+    CommentData,
     CommentInDB,
     CommentResponse,
-    CommentData,
+    CommentUpdate,
 )
 from app.models.user import UserResponse
-from app.db.mongodb import get_database
+
+logger = logging.getLogger(__name__)
 
 
 class CommentService:
-    def __init__(self, db: AsyncIOMotorDatabase = None):
+    def __init__(self, db: AsyncDatabase | None = None):
         self.db = db or get_database()
 
     def _convert_to_object_id(self, id_str: str) -> ObjectId:
@@ -37,19 +42,22 @@ class CommentService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Geçersiz veri: {str(e)}",
             )
+        logger.exception("Unexpected comment service error", exc_info=e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Bir hata oluştu: {str(e)}",
+            detail="Beklenmeyen bir sunucu hatası oluştu.",
         )
 
-    async def _enrich_comments_with_user_data(self, comments: List[dict]) -> List[CommentResponse]:
+    async def _enrich_comments_with_user_data(
+        self, comments: List[dict]
+    ) -> List[CommentResponse]:
         """Yorumlara kullanıcı bilgisini ekler"""
         result = []
         for comment in comments:
             # Kullanıcı bilgisini getir
             user_id = comment["user_id"]
             user = await self.db.users.find_one({"_id": ObjectId(user_id)})
-            
+
             if not user:
                 # Kullanıcı bulunamazsa dummy kullanıcı oluştur
                 user = {
@@ -58,19 +66,19 @@ class CommentService:
                     "name": "Silinmiş Kullanıcı",
                     "avatar_url": None,
                     "gender": 2,
-                    "created_at": datetime.utcnow(),
-                    "updated_at": datetime.utcnow()
+                    "created_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc),
                 }
-            
+
             # ID'yi string'e çevir
             user["_id"] = str(user["_id"])
-            
+
             # Yanıtı oluştur
             comment_data = CommentData(**{**comment, "_id": str(comment["_id"])})
             user_data = UserResponse(**user)
-            
+
             result.append(CommentResponse(comment=comment_data, user=user_data))
-        
+
         return result
 
     async def create_comment(
@@ -85,9 +93,9 @@ class CommentService:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="İçerik bulunamadı"
                 )
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             # Yorum oluştur
-            comment_dict = comment.dict()
+            comment_dict = comment.model_dump()
             comment_dict.update(
                 {
                     "movie_id": str(movie_object_id),
@@ -127,8 +135,8 @@ class CommentService:
                 )
 
             # Yorumları getir
-            comments = (
-                await self.db.comments.find({"movie_id": movie_id})
+            comments = await (
+                self.db.comments.find({"movie_id": movie_id})
                 .sort("created_at", -1)
                 .skip(skip)
                 .limit(limit)
@@ -171,8 +179,8 @@ class CommentService:
                 )
 
             # Yorumu güncelle
-            update_data = comment_update.dict(exclude_unset=True)
-            update_data["updated_at"] = datetime.utcnow()
+            update_data = comment_update.model_dump(exclude_unset=True)
+            update_data["updated_at"] = datetime.now(timezone.utc)
 
             await self.db.comments.update_one(
                 {"_id": comment_object_id}, {"$set": update_data}
@@ -182,7 +190,7 @@ class CommentService:
             updated_comment = await self.db.comments.find_one(
                 {"_id": comment_object_id}
             )
-            
+
             # Kullanıcı bilgisi ile birlikte yanıt oluştur
             comments = [updated_comment]
             enriched_comments = await self._enrich_comments_with_user_data(comments)
@@ -225,8 +233,8 @@ class CommentService:
     ) -> List[CommentResponse]:
         """Kullanıcının yorumlarını getirir"""
         try:
-            comments = (
-                await self.db.comments.find({"user_id": user_id})
+            comments = await (
+                self.db.comments.find({"user_id": user_id})
                 .sort("created_at", -1)
                 .skip(skip)
                 .limit(limit)
