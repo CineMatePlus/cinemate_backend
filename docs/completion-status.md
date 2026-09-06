@@ -14,7 +14,7 @@
 
 | Kontrol | Sonuç |
 | --- | --- |
-| Backend birim testleri | 33 geçti; satır coverage %61 |
+| Backend birim testleri | 36 geçti; önceki 33 testlik ölçümde satır coverage %61 |
 | Behave | 5 senaryo, 20 adım geçti; her çalıştırmaya özel DB |
 | Gerçek API auth kabulü | Rotation, reuse, logout, iki cihaz ve concurrency geçti |
 | Ürün kabulü | İki kullanıcı sahiplik/izolasyon, yorum CRUD ve 8 eşzamanlı toggle geçti |
@@ -23,16 +23,17 @@
 | Android demo testi | Keşif, detay, semantik arama, benzer kullanıcı, koleksiyon ve profil geçti |
 | Kalite | Black, isort, Dart format ve fatal-info analyze temiz |
 | Güvenlik | pip-audit ve 119 mobil paketin OSV taraması temiz; Gitleaks geçmiş taraması temiz |
-| Seed | 999 gerçek embedding; tekrarında 999 atlandı, duplicate yok |
+| Seed | 999 gerçek embedding; tekrarında 999 atlandı, duplicate yok; Mongo restart sonrası 999 korundu |
 | Build | Normal debug ve özel anahtarla imzalı release APK üretildi |
 
 Gitleaks iki tarihsel dokümantasyon örneği için yalnız tam fingerprint istisnası kullanır: literal ACCESS_TOKEN ve üç noktayla kesilmiş JWT başlığı. Gerçek credential istisnası yoktur.
 
 ## Açık kabul kapıları
 
-- Uzak CI sonuçları ve main required-check kuralları henüz bu kayıtta doğrulanmış değildir.
+- Backend uzak CI: `933a046` commit’inde quality, unit, integration ve container-security job’larının tamamı geçti: https://github.com/CineMatePlus/cinemate_backend/actions/runs/34052413361
+- Mobil dal SSH ile gönderildi; GitHub bağlantısı mobil repo için 404, PR yazımı için 403 dönüyor. Mobil uzak CI ve main required-check ayarları doğrulanamadı.
 - Fiziksel Android cihaz bağlı değildir; emülatör testi fiziksel cihaz kabulünün yerine geçmez.
-- Mobil deponun anonim erişimi ve yayın metadata kontrolü henüz tamamlanmış değildir.
+- Backend anonim erişime açık; mobil depo anonim API erişiminde 404 dönüyor. Görünürlük değiştirilmedi; metadata/PR işlemleri GitHub oturumu veya bağlantı yetkisi bekliyor.
 - Release artifact SHA/kurulum ve video teslim bilgileri mobil `docs/release.md` dosyasında tutulur.
 
 Tüm planı bitmiş veya internet ölçeğinde production-ready olarak sunmayın. Çalışan Android/ML destekli portföy projesi olarak sunulabilir; açık kabul kapıları bu sürümün sınırlarıdır.

@@ -2,7 +2,7 @@
 
 Tarih: 6 Eylül 2026
 
-Kapsam: `cinemate_backend` ve kardeş `cinemate_mobile` deposu; geliştirme, test, demo dağıtımı ve portföy sunumu. Bu belge bir uygulama planıdır; işaretlenmemiş işler henüz tamamlanmış değildir.
+Kapsam: `cinemate_backend` ve kardeş `cinemate_mobile` deposu; geliştirme, test, demo dağıtımı ve portföy sunumu. Bu belge başlangıç planıdır. Uygulama ve test sonuçlarının güncel kaydı [completion-status.md](completion-status.md) dosyasındadır; aşağıdaki başlangıç checklist’i tek başına güncel kabul durumu olarak kullanılmamalıdır.
 
 Kaynaklar: 26 Ağustos incelemesi ve devamındaki backend uygulamasını içeren “Cinemate production hazırlığını ince” görevi (`01a03f65-466e-7870-b638-b0463f0d0e9d`), 6 Eylül yerel kod incelemesi ve çalıştırılan kontroller.
 
