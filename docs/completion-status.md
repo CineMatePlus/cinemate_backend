@@ -41,3 +41,7 @@ Tüm planı bitmiş veya internet ölçeğinde production-ready olarak sunmayın
 ## CV metni
 
 Flutter/Riverpod ve FastAPI ile film keşfi, semantik arama ve kişisel koleksiyon uygulaması geliştirdim. MongoDB Vector Search ve 1024 boyutlu Ollama embedding’lerini 999 filmlik veri kümesiyle birleştirdim; refresh-token rotasyonu, eşzamanlı istek yönetimi ve sahiplik kontrollerini otomatik testlerle doğruladım. Android build, CI ve tekrar üretilebilir demo verisi hazırladım.
+
+## Main entegrasyonu — 6 Eylül 2026
+
+Backend uygulama değişikliklerinin tamamı `a224a7f` üzerinde uzak CI’dan geçti: https://github.com/CineMatePlus/cinemate_backend/actions/runs/34053568353. Main’e fast-forward ile alındı; geçmiş commitler korundu. Fiziksel cihaz kabulü ve mobil uzak CI erişimi ayrı doğrulama sınırları olarak devam eder.
