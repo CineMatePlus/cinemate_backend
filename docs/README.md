@@ -1,9 +1,10 @@
 # Backend Dokümantasyonu
 
-Bu klasör yalnızca backend'e ait teknik belgeleri içerir.
+Bu klasör backend'e ait teknik belgeleri ve iki depoyu kapsayan CV/demo tamamlanma planını içerir.
 
 | Belge | Amaç | Yetki düzeyi |
 | --- | --- | --- |
+| [`completion-plan.md`](completion-plan.md) | Backend, mobil, demo ve CV sunumu için sıralı işler ve kabul ölçütleri | Proje tamamlanma planı |
 | [`architecture.md`](architecture.md) | Katmanlar, veri yönetimi, güvenlik ve teknik tasarım | Mimari başvuru |
 | [`product-overview.md`](product-overview.md) | Ürün özellikleri ve teknoloji özeti | Ürün bağlamı |
 | [`use-cases.md`](use-cases.md) | Aktörler ve kullanım senaryoları | Analiz başvurusu |

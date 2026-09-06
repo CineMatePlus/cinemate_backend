@@ -20,7 +20,7 @@ class UserService:
         # To avoid circular imports, we import services here if needed or use them directly
         # from app.services.interaction import InteractionService
 
-    async def update_user_embedding(self, user_id: str):
+    async def update_user_embedding(self, user_id: str, session=None):
         """
         Calculates and updates the user's taste embedding vector based on their liked movies.
         """
@@ -28,7 +28,9 @@ class UserService:
 
         # 1. Fetch all 'like' interactions for the user
         liked_interactions_cursor = self.db.interactions.find(
-            {"user_id": user_object_id, "interaction_type": "like"}, {"movie_id": 1}
+            {"user_id": user_object_id, "interaction_type": "like"},
+            {"movie_id": 1},
+            session=session,
         )
         liked_movie_ids = [
             item["movie_id"]
@@ -37,13 +39,14 @@ class UserService:
 
         if not liked_movie_ids:
             # If user has no liked movies, remove the embedding
-            await self._clear_embedding(user_object_id)
+            await self._clear_embedding(user_object_id, session=session)
             return
 
         # 2. Fetch embeddings of the liked movies
         movies_cursor = self.db.movies.find(
             {"_id": {"$in": liked_movie_ids}, "embedding": {"$exists": True}},
             {"embedding": 1},
+            session=session,
         )
         movie_embeddings = [
             movie["embedding"] for movie in await movies_cursor.to_list(length=None)
@@ -51,7 +54,7 @@ class UserService:
 
         if not movie_embeddings:
             # No liked movies have embeddings, so nothing to calculate
-            await self._clear_embedding(user_object_id)
+            await self._clear_embedding(user_object_id, session=session)
             return
 
         # 3. Calculate the average embedding
@@ -68,9 +71,10 @@ class UserService:
                     "updated_at": datetime.now(timezone.utc),
                 }
             },
+            session=session,
         )
 
-    async def _clear_embedding(self, user_object_id: ObjectId) -> None:
+    async def _clear_embedding(self, user_object_id: ObjectId, session=None) -> None:
         await self.db.users.update_one(
             {"_id": user_object_id},
             {
@@ -80,6 +84,7 @@ class UserService:
                     "embedding_dimensions": "",
                 }
             },
+            session=session,
         )
 
     async def get_similar_users(

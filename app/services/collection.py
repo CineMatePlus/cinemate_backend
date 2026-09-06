@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from bson import ObjectId
 from fastapi import HTTPException, status
 
+from app.core.validation import object_id
 from app.db.mongodb import get_database
 from app.models.collection import (
     CollectionCreate,
@@ -24,7 +24,7 @@ class CollectionService:
         self, collection_data: CollectionCreate, user_id: str
     ) -> CollectionInDB:
         """Yeni bir koleksiyon oluşturur"""
-        user_object_id = ObjectId(user_id)
+        user_object_id = object_id(user_id)
 
         existing_collection = await self.db.collections.find_one(
             {"user_id": user_object_id, "name": collection_data.name}
@@ -64,7 +64,7 @@ class CollectionService:
         skip: int = 0,
         limit: int = 10,
     ) -> List[CollectionResponse]:
-        user_object_id = ObjectId(user_id)
+        user_object_id = object_id(user_id)
         match_stage = {"user_id": user_object_id}
         if user_id != current_user_id:
             match_stage["is_public"] = True
@@ -99,7 +99,7 @@ class CollectionService:
     async def get_collection_by_id(
         self, collection_id: str, current_user_id: Optional[str]
     ) -> CollectionResponse:
-        collection_object_id = ObjectId(collection_id)
+        collection_object_id = object_id(collection_id)
 
         pipeline = [
             {"$match": {"_id": collection_object_id}},
@@ -142,8 +142,8 @@ class CollectionService:
     async def _get_collection_and_validate_owner(
         self, collection_id: str, user_id: str
     ) -> dict:
-        collection_obj_id = ObjectId(collection_id)
-        user_obj_id = ObjectId(user_id)
+        collection_obj_id = object_id(collection_id)
+        user_obj_id = object_id(user_id)
 
         collection = await self.db.collections.find_one({"_id": collection_obj_id})
 
@@ -172,9 +172,9 @@ class CollectionService:
         if "name" in update_data:
             existing_name = await self.db.collections.find_one(
                 {
-                    "user_id": ObjectId(user_id),
+                    "user_id": object_id(user_id),
                     "name": update_data["name"],
-                    "_id": {"$ne": ObjectId(collection_id)},
+                    "_id": {"$ne": object_id(collection_id)},
                 }
             )
             if existing_name:
@@ -183,7 +183,7 @@ class CollectionService:
                 )
 
         await self.db.collections.update_one(
-            {"_id": ObjectId(collection_id)}, {"$set": update_data}
+            {"_id": object_id(collection_id)}, {"$set": update_data}
         )
 
         return await self.get_collection_by_id(collection_id, user_id)
@@ -191,7 +191,7 @@ class CollectionService:
     async def delete_collection(self, collection_id: str, user_id: str) -> bool:
         await self._get_collection_and_validate_owner(collection_id, user_id)
 
-        result = await self.db.collections.delete_one({"_id": ObjectId(collection_id)})
+        result = await self.db.collections.delete_one({"_id": object_id(collection_id)})
 
         if result.deleted_count == 1:
             return True
@@ -202,13 +202,14 @@ class CollectionService:
     ) -> bool:
         await self._get_collection_and_validate_owner(collection_id, user_id)
 
-        movie_obj_id = ObjectId(movie_id)
+        movie_obj_id = object_id(movie_id)
         movie = await self.db.movies.find_one({"_id": movie_obj_id})
         if not movie:
             raise HTTPException(status_code=404, detail="Movie not found")
 
         result = await self.db.collections.update_one(
-            {"_id": ObjectId(collection_id)}, {"$addToSet": {"movie_ids": movie_obj_id}}
+            {"_id": object_id(collection_id)},
+            {"$addToSet": {"movie_ids": movie_obj_id}},
         )
 
         return result.modified_count > 0
@@ -219,8 +220,8 @@ class CollectionService:
         await self._get_collection_and_validate_owner(collection_id, user_id)
 
         result = await self.db.collections.update_one(
-            {"_id": ObjectId(collection_id)},
-            {"$pull": {"movie_ids": ObjectId(movie_id)}},
+            {"_id": object_id(collection_id)},
+            {"$pull": {"movie_ids": object_id(movie_id)}},
         )
 
         if result.modified_count == 0:
@@ -248,7 +249,7 @@ class CollectionService:
     ) -> List[CollectionInDB]:
         """Kullanıcının public koleksiyonlarını getirir"""
         collections = await (
-            self.db.collections.find({"user_id": ObjectId(user_id), "is_public": True})
+            self.db.collections.find({"user_id": object_id(user_id), "is_public": True})
             .sort("updated_at", -1)
             .skip(skip)
             .limit(limit)
@@ -259,9 +260,8 @@ class CollectionService:
     async def get_movies_in_collection(
         self, collection_id: str, current_user_id: Optional[str], skip: int, limit: int
     ) -> List[MovieResponse]:
-        collection = await self.db.collections.find_one(
-            {"_id": ObjectId(collection_id)}
-        )
+        collection_object_id = object_id(collection_id)
+        collection = await self.db.collections.find_one({"_id": collection_object_id})
 
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found")

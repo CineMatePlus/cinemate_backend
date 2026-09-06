@@ -1,7 +1,10 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pymongo.errors import DuplicateKeyError, OperationFailure
 
 from app.core.config import settings
 from app.db.mongodb import (
@@ -139,3 +142,17 @@ async def vector_search_health():
 @app.get("/metrics/vector-search")
 async def vector_search_measurements():
     return vector_search_metrics.snapshot()
+
+
+@app.exception_handler(DuplicateKeyError)
+async def duplicate_key_error(request, exc):
+    return JSONResponse(status_code=409, content={"detail": "Bu kayıt zaten mevcut."})
+
+
+@app.exception_handler(OperationFailure)
+async def database_operation_error(request, exc):
+    logging.getLogger(__name__).exception("Database operation failed", exc_info=exc)
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Veri servisi geçici olarak kullanılamıyor."},
+    )

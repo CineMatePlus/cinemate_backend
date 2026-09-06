@@ -21,7 +21,7 @@ class MovieService:
     async def get_movies(
         user_id: Optional[str] = None, skip: int = 0, limit: int = 20
     ) -> List[MovieResponse]:
-        pipeline = [{"$skip": skip}, {"$limit": limit}]
+        pipeline = [{"$sort": {"_id": 1}}, {"$skip": skip}, {"$limit": limit}]
 
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))
@@ -36,7 +36,12 @@ class MovieService:
     async def get_movies_by_genre(
         genre: str, user_id: Optional[str] = None, skip: int = 0, limit: int = 20
     ) -> List[MovieResponse]:
-        pipeline = [{"$match": {"genres": genre}}, {"$skip": skip}, {"$limit": limit}]
+        pipeline = [
+            {"$match": {"genres": genre}},
+            {"$sort": {"_id": 1}},
+            {"$skip": skip},
+            {"$limit": limit},
+        ]
 
         if user_id:
             pipeline.extend(MovieService._get_user_interaction_pipeline(user_id))

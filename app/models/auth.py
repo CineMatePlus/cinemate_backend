@@ -3,6 +3,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.core.config import settings
+from app.core.validation import NameText
 from app.models.user import Gender, UserResponse
 
 
@@ -42,7 +43,7 @@ class RegisterRequest(BaseModel):
     """Kayıt isteği modeli"""
 
     email: EmailStr
-    name: str = Field(min_length=1, max_length=100)
+    name: NameText
     password: str
     gender: Gender = Gender.OTHER
 

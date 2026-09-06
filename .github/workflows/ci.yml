@@ -92,6 +92,10 @@ jobs:
           poetry run python scripts/seed_movies.py --skip-embeddings
           poetry run python -c "import os; from pymongo import MongoClient; c=MongoClient(os.environ['MONGODB_URL']); assert c[os.environ['MONGODB_DB']].movies.count_documents({}) == 999; c.close()"
       - run: poetry run python scripts/vector_search_smoke.py
+      - name: Product ownership and concurrent writes
+        env:
+          TEST_BACKEND_ORIGIN: http://127.0.0.1:8000
+        run: poetry run python tests/integration/product_smoke.py
       - name: Verify MongoDB volume persistence after restart
         run: |
           docker compose restart mongodb
@@ -126,7 +130,7 @@ jobs:
           poetry export --only main --without-hashes --output /tmp/requirements.txt
           pip-audit --requirement /tmp/requirements.txt
       - name: Gitleaks
-        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.28.0 detect --source=/repo --no-banner --redact
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.28.0 detect --source=/repo --gitleaks-ignore-path=/repo/.gitleaksignore --no-banner --redact
       - run: docker compose build backend
       - run: docker compose up -d --wait
       - run: curl --fail --retry 5 http://localhost:8000/health/live

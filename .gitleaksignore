@@ -1,2 +1,4 @@
-# Historical API-response example in CineMate_Rapor.md; not a credential.
+# Literal ACCESS_TOKEN in the documented curl example; no real credential.
+0cbf3958c37afcc93388cf3df8aad90edec29d87:README.md:curl-auth-header:90
+# Historical report shows only a JWT header followed by literal ellipsis.
 c76e019c1b8ef82324f68f54e01430759fea910e:CineMate_Rapor.md:generic-api-key:616

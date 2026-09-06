@@ -2,6 +2,8 @@
 
 CineMate; FastAPI, MongoDB Atlas Vector Search ve Ollama ile film keşfi, koleksiyon yönetimi ve kişiselleştirilmiş öneriler sunan bir backend servisidir.
 
+**Portföy sürümü:** Android istemci ile birlikte çalışan, ticari olmayan bir film keşif projesi. [Mobil uygulama ve ekran görüntüleri](https://github.com/CineMatePlus/cinemate_mobile) · [Tamamlanma durumu](docs/completion-status.md) · [Plan](docs/completion-plan.md)
+
 ## Hızlı başlangıç
 
 Gereksinimler: Docker Desktop, Docker Compose ve varsayılan geliştirme yolu için host işletim sisteminde [Ollama](https://ollama.com/). Python ile yerel geliştirme yapmak için Python 3.12 ve Poetry 2.2 gerekir.
@@ -133,3 +135,21 @@ Güvenlik bildirimi için [SECURITY.md](SECURITY.md), katkı akışı için [CON
 ## Lisans
 
 Uygulama kodu [MIT License](LICENSE) altındadır. Veri dosyası için ayrı koşullar [DATA_NOTICE.md](DATA_NOTICE.md) içinde belirtilmiştir.
+
+## Sentetik demo hesabı
+
+Mevcut geliştirme verisini korumak için demo veritabanını açıkça seçin. Önce yukarıdaki Docker/Ollama kurulumunu tamamlayın:
+
+```bash
+MONGODB_DB=cinemate_demo docker compose run --rm index-init
+MONGODB_DB=cinemate_demo docker compose --profile seed run --rm seed
+read -s DEMO_PASSWORD
+export DEMO_PASSWORD
+MONGODB_DB=cinemate_demo docker compose run --rm -e DEMO_PASSWORD backend python scripts/seed_demo.py --database cinemate_demo
+MONGODB_DB=cinemate_demo docker compose up -d --wait backend
+unset DEMO_PASSWORD
+```
+
+Demo aracı yalnız `cinemate_demo` üzerinde çalışır; Deniz, Ece ve Can adlarında üç sentetik kullanıcı, koleksiyon, yorum ve etkileşim oluşturur. Hesaplar `demo1@example.com`–`demo3@example.com`; parola terminalde verdiğiniz değerdir (8–32 karakter). Tekrar çalıştırmak bu sentetik hesapların demo verisini yeniler; normal veritabanını silmez. Embedding servisi kesildiğinde katalog kullanılabilir, semantik arama kontrollü 503 döner.
+
+İki kullanıcıyla sahiplik ve eşzamanlı etkileşim kabulü için `tests/integration/product_smoke.py` kullanılır. Araç yalnız `_acceptance` veya `_ci` ile biten test veritabanlarını kabul eder.

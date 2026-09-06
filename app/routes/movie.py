@@ -18,11 +18,8 @@ async def get_current_user_optional(
     if authorization is None:
         return None
 
-    try:
-        token = auth_service.bearer_token(authorization)
-        return await auth_service.get_current_user(token)
-    except HTTPException:
-        return None
+    token = auth_service.bearer_token(authorization)
+    return await auth_service.get_current_user(token)
 
 
 @router.get("", response_model=List[MovieResponse])
@@ -38,7 +35,7 @@ async def get_movies(
 
 @router.get("/search", response_model=List[MovieResponse])
 async def search_movies(
-    q: str = Query(..., alias="query"),
+    q: str = Query(..., alias="query", min_length=1, max_length=500, pattern=r".*\S.*"),
     limit: int = Query(10, ge=1, le=50),
     current_user: Optional[UserInDB] = Depends(get_current_user_optional),
 ):
@@ -48,7 +45,7 @@ async def search_movies(
     except EmbeddingProviderError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc),
+            detail="Arama servisi geçici olarak kullanılamıyor. Tekrar deneyin.",
         ) from exc
     movies = await MovieService.search_movies_by_vector(
         embedding=embedding, user_id=user_id, limit=limit

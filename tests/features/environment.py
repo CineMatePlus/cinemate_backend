@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import time
+import uuid
 
 import requests
 from behave import fixture, use_fixture
@@ -17,7 +18,7 @@ def fastapi_server(context):
     process_env.update(
         {
             "MONGODB_URL": mongodb_url,
-            "MONGODB_DB": "cinetest",
+            "MONGODB_DB": context.test_db,
             "EMBEDDING_WARMUP": "false",
             "VECTOR_SEARCH_STARTUP_CHECK": "false",
         }
@@ -60,7 +61,7 @@ def mongodb_connection(context):
     async def reset_database():
         client = AsyncMongoClient(mongodb_url)
         try:
-            await client.drop_database("cinetest")
+            await client.drop_database(context.test_db)
         finally:
             await client.close()
 
@@ -70,5 +71,6 @@ def mongodb_connection(context):
 
 
 def before_all(context):
+    context.test_db = "cinemate_test_" + uuid.uuid4().hex
     use_fixture(mongodb_connection, context)
     use_fixture(fastapi_server, context)

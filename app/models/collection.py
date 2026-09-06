@@ -1,17 +1,17 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.models.movie import MovieResponse
+from app.core.validation import DescriptionText, NameText
 from app.models.pyobjectid import PyObjectId
 
 
 class CollectionBase(BaseModel):
     """Koleksiyon temel modeli"""
 
-    name: str
-    description: Optional[str] = None
+    name: NameText
+    description: Optional[DescriptionText] = None
     is_public: bool = True
 
 
@@ -24,9 +24,18 @@ class CollectionCreate(CollectionBase):
 class CollectionUpdate(BaseModel):
     """Koleksiyon güncelleme modeli"""
 
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: Optional[NameText] = None
+    description: Optional[DescriptionText] = None
     is_public: Optional[bool] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_null_required_fields(cls, data):
+        if isinstance(data, dict) and any(
+            key in data and data[key] is None for key in ("name", "is_public")
+        ):
+            raise ValueError("name and is_public cannot be null")
+        return data
 
 
 class CollectionInDB(CollectionBase):
@@ -50,5 +59,5 @@ class CollectionResponse(CollectionInDB):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    owner_name: str
+    owner_name: NameText
     movie_count: int = 0

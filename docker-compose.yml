@@ -44,7 +44,7 @@ services:
     environment:
       DO_NOT_TRACK: "1"
     ports:
-      - "27018:27017"
+      - "127.0.0.1:27018:27017"
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
@@ -103,7 +103,7 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 10s

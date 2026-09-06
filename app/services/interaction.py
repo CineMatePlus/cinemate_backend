@@ -50,31 +50,38 @@ class InteractionService:
             "interaction_type": interaction_type,
         }
 
-        existing_interaction = await self.db.interactions.find_one(interaction_data)
+        async def mutate(session):
+            await self.db.users.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$inc": {"interaction_revision": 1}},
+                session=session,
+            )
+            existing = await self.db.interactions.find_one(
+                interaction_data, session=session
+            )
+            if existing:
+                await self.db.interactions.delete_one(
+                    {"_id": existing["_id"]}, session=session
+                )
+                delta = -1
+            else:
+                await self.db.interactions.insert_one(
+                    {**interaction_data, "created_at": datetime.now(timezone.utc)},
+                    session=session,
+                )
+                delta = 1
+            if counter_field:
+                await self.db.movies.update_one(
+                    {"_id": ObjectId(movie_id)},
+                    {"$inc": {counter_field: delta}},
+                    session=session,
+                )
+            if interaction_type == "like":
+                await self.user_service.update_user_embedding(user_id, session=session)
+            return delta == 1
 
-        if existing_interaction:
-            # Interaction exists, so remove it
-            await self.db.interactions.delete_one(interaction_data)
-            if counter_field:
-                await self.db.movies.update_one(
-                    {"_id": ObjectId(movie_id)}, {"$inc": {counter_field: -1}}
-                )
-            # If a like was removed, update the user's embedding
-            if interaction_type == "like":
-                await self.user_service.update_user_embedding(user_id)
-            return False  # Removed
-        else:
-            # Interaction does not exist, so add it
-            interaction_data["created_at"] = datetime.now(timezone.utc)
-            await self.db.interactions.insert_one(interaction_data)
-            if counter_field:
-                await self.db.movies.update_one(
-                    {"_id": ObjectId(movie_id)}, {"$inc": {counter_field: 1}}
-                )
-            # If a like was added, update the user's embedding
-            if interaction_type == "like":
-                await self.user_service.update_user_embedding(user_id)
-            return True  # Added
+        async with self.db.client.start_session() as session:
+            return await session.with_transaction(mutate)
 
     async def get_movie_ids_by_interaction(
         self, user_id: str, interaction_type: str

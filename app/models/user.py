@@ -58,5 +58,15 @@ class UserResponse(UserBase):
     updated_at: datetime
 
 
-class SimilarUserResponse(UserResponse):
+class PublicUserResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    id: str = Field(alias="_id")
+    name: str
+    avatar_url: Optional[str] = None
+    gender: Gender = Gender.OTHER
+    created_at: datetime
+    updated_at: datetime
+
+
+class SimilarUserResponse(PublicUserResponse):
     similarity: float

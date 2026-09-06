@@ -3,11 +3,12 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.user import UserResponse
+from app.core.validation import CommentText
+from app.models.user import PublicUserResponse
 
 
 class CommentBase(BaseModel):
-    text: str
+    text: CommentText
 
 
 class CommentCreate(CommentBase):
@@ -15,7 +16,7 @@ class CommentCreate(CommentBase):
 
 
 class CommentUpdate(BaseModel):
-    text: Optional[str] = None
+    text: CommentText
 
 
 class CommentInDB(CommentBase):
@@ -46,4 +47,4 @@ class CommentResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     comment: CommentData
-    user: UserResponse
+    user: PublicUserResponse
